@@ -1,0 +1,20 @@
+setRoleManager: **setRoleManager <oui/non> <@Rôles>** Définit le rôle comme étant data manager ou pas
+getRoleManager: Donne tous les rôles qui sont data manager
+setRoleMovable: **setRoleMovable <oui/non> <@Rôles>** Définit le rôle comme étant attribuable automatiquement par les membres ou pas
+getAllChoices: Donne tous les choix de tous les membres
+getAllAvailability: Donne toutes les disponibilités de tous les membres
+getAllUsers: Donne les pseudos de tous les membres
+getRoleMovable: Donne tous les rôles qui sont attribuables automatiquement par les membres
+setChoice: **setChoice <Choix>** Définit vos choix
+updateUser: Met à jour votre pseudo dans la base de donnée
+getChoice: Donne vos choix
+addRole: **addRole <@Rôles>** Vous donne le(s) rôles choisis si ceux-ci sont déplaçeables
+setAvailability: **setAvailability <Availability>** Définit vos disponibilités
+removeRole: **removeRole <@Rôles>** Vous enlève le(s) rôles choisis si ceux-ci sont déplaçeables
+getAvailability: Donne vos disponibilités
+setEvent: **setEvent <Event>** Définit l'évent de la guilde
+getEvent: Donne l'évent de la guild
+DataManagerCommands: Catégorie de commandes qui ne sont utilisables que par les membres ayant la permission **administrateur** ou un rôle **data manager** (faites __-getRoleManager__ pour savoir quels rôles sont data manager)
+AdminCommands: Catégorie de commandes qui ne sont utilisables que par les membres ayant la permission **administrateur**
+MemberCommands: Catégorie de commandes utilisables par tous les membres du serveur
+BasicCommands: La catégorie **BasicCommands** n'a que la commande __help__ utilisable par tout le monde
