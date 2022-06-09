@@ -262,7 +262,7 @@ async def on_command_error(ctx, error):
     elif isinstance(error.original, discord.Forbidden):
         await ctx.send("Oups, je n'ai pas le droit de faire ça, il me manque les permissions.")
 
-token = "OTcxNDMyOTY3NTA1MzIyMDE2.GQljri.gAt-ik8ikcFx4U5zZtbOEsT5ZBTxNxRFKAWbww"
+token = "OTgyNzIyODMzNTE4MDYzNjM2.GpANVJ.Tcm3ZlC8fJeXyIB_cTMBrUBYmjz3BEtBGb2ObI"
 bot.run(token)
 
 """ Exemple Embed

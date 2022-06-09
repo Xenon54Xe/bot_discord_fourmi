@@ -18,67 +18,62 @@ class MemberCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.database_handler = dbh.DatabaseHandler("database.db")
+        self.list_all = ['all', 'a', 'everything', 'e', 'tout']
+        self.list_none = ["None", "0", "", "Null", " "]
 
     @commands.command()
-    async def updateUser(self, ctx):
-        user_id = ctx.author.id
-        guild_id = ctx.guild.id
-        username = ctx.author.display_name
+    async def updateUser(self, ctx, arg=None):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        if arg in self.list_all:
+            users = guild.members
+        else:
+            users = ctx.message.mentions
+
+        if len(users) > 0:
+            for user in users:
+                user_id = user.id
+                username = user.display_name
+                self.database_handler.create_user(user_id, guild_id, username)
+            await ctx.send("Utilisateurs mis à jour.")
+            return
+
+        user = ctx.author
+        user_id = user.id
+        username = user.display_name
         self.database_handler.create_user(user_id, guild_id, username)
-        await ctx.send("Utilisateur mis à jour")
+        await ctx.send("Utilisateur mis à jour.")
 
     @commands.command()
     async def setChoice(self, ctx, *, choice):
-        user_id = ctx.author.id
-        guild_id = ctx.guild.id
+        guild = ctx.guild
+        guild_id = guild.id
 
-        if choice in ("None", "0", "", "Null", " "):
+        if choice in self.list_none:
             choice = None
 
+        user_id = ctx.author.id
         self.database_handler.set_choice(user_id, guild_id, choice)
         await ctx.send("Vos choix ont étés mis à jour")
 
     @commands.command()
-    async def getChoice(self, ctx):
-        user_id = ctx.author.id
-        guild_id = ctx.guild.id
-        choices = self.database_handler.get_choice(user_id, guild_id)
-
-        if choices is None:
-            say = "Vous n'avez pas fais de choix"
-        else:
-            say = f"Vos choix : {choices}"
-
-        await ctx.send(say)
-
-    @commands.command()
     async def setAvailability(self, ctx, *, args):
-        user_id = ctx.author.id
-        guild_id = ctx.guild.id
+        guild = ctx.guild
+        guild_id = guild.id
 
-        if args in ("None", "0", "", "Null", " "):
+        if args in self.list_none:
             args = None
 
+        user_id = ctx.author.id
         self.database_handler.set_availability(user_id, guild_id, args)
         await ctx.send("Disponibilités mises à jour.")
-
-    @commands.command()
-    async def getAvailability(self, ctx):
-        user_id = ctx.author.id
-        guild_id = ctx.guild.id
-        availability = self.database_handler.get_availability(user_id, guild_id)
-
-        if availability is None:
-            say = "Vous n'avez pas défini vos disponibilités"
-        else:
-            say = f"Vos disponibilités : {availability}"
-
-        await ctx.send(say)
 
     @commands.command()
     async def getRoleMovable(self, ctx):
         guild = ctx.guild
         guild_id = guild.id
+
         roles = self.database_handler.get_all_roles(guild_id)
         say = f"Les rôles attribuables sont :\n"
         for role in roles:
@@ -91,13 +86,15 @@ class MemberCommands(commands.Cog):
 
     @commands.command()
     async def addRole(self, ctx):
-        guild_id = ctx.guild.id
+        guild = ctx.guild
+        guild_id = guild.id
+
         member = ctx.author
         roles = ctx.message.role_mentions
 
         for role in roles:
             role_id = role.id
-            movable = self.database_handler.get_movable(role_id, guild_id)
+            movable = self.database_handler.get_role(role_id, guild_id)["movable"]
             if movable:
                 await member.add_roles(role)
             else:
@@ -107,13 +104,15 @@ class MemberCommands(commands.Cog):
 
     @commands.command()
     async def removeRole(self, ctx):
-        guild_id = ctx.guild.id
+        guild = ctx.guild
+        guild_id = guild.id
+
         member = ctx.author
         roles = ctx.message.role_mentions
 
         for role in roles:
             role_id = role.id
-            movable = self.database_handler.get_movable(role_id, guild_id)
+            movable = self.database_handler.get_role(role_id, guild_id)["movable"]
             if movable:
                 await member.remove_roles(role)
             else:
@@ -123,10 +122,12 @@ class MemberCommands(commands.Cog):
 
     @commands.command()
     async def getEvent(self, ctx):
+        guild = ctx.guild
+        guild_id = guild.id
+
         user = ctx.author
         channel = await user.create_dm()
-        guild_id = ctx.guild.id
+
         event = self.database_handler.get_guild(guild_id)["event"]
-        print(event)
         await channel.send(f"L'évent de la guild est:\n"
                            f"**{event}**")

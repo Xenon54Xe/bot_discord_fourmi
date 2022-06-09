@@ -34,23 +34,17 @@ class DatabaseHandler:
 
         return map(dict, result)
 
-    def get_choice(self, user_id: int, guild_id: int) -> str:
+    def get_user(self, user_id: int, guild_id: int) -> dict:
         cursor = self.con.cursor()
-        query = f"SELECT choice FROM User WHERE (userId, guildId) = (?, ?);"
+        query = f"SELECT * FROM User WHERE (userId, guildId) = (?, ?);"
         cursor.execute(query, (user_id, guild_id))
         result = cursor.fetchall()
         cursor.close()
 
-        return dict(result[0])["choice"]
+        if len(result) > 1:
+            print(f"Il y a trop d'utilisateurs ayant l'id : {user_id}, dans la guild : {guild_id}")
 
-    def get_availability(self, user_id: int, guild_id: int) -> str:
-        cursor = self.con.cursor()
-        query = f"SELECT availability FROM User WHERE (userId, guildId) = (?, ?);"
-        cursor.execute(query, (user_id, guild_id))
-        result = cursor.fetchall()
-        cursor.close()
-
-        return dict(result[0])["availability"]
+        return dict(result[0])
 
     def set_choice(self, user_id: int, guild_id: int, new_choices: str):
         cursor = self.con.cursor()
@@ -105,6 +99,18 @@ class DatabaseHandler:
 
         return map(dict, result)
 
+    def get_role(self, role_id: int, guild_id: int) -> dict:
+        cursor = self.con.cursor()
+        query = f"SELECT * FROM Role WHERE (roleId, guildId) = (?, ?);"
+        cursor.execute(query, (role_id, guild_id))
+        result = cursor.fetchall()
+        cursor.close()
+
+        if len(result) > 1:
+            print(f"Il y a trop de rôles ayant l'id : {role_id}, dans la guild : {guild_id}")
+
+        return dict(result[0])
+
     def set_data_manager(self, role_id: int, guild_id: int, data_manager: bool):
         cursor = self.con.cursor()
         query = f"UPDATE Role SET dataManager = ? WHERE (roleId, guildId) = (?, ?);"
@@ -112,30 +118,12 @@ class DatabaseHandler:
         cursor.close()
         self.con.commit()
 
-    def get_data_manager(self, role_id: int, guild_id: int) -> bool:
-        cursor = self.con.cursor()
-        query = f"SELECT dataManager FROM Role WHERE (roleId, guildId) = (?, ?);"
-        cursor.execute(query, (role_id, guild_id))
-        result = cursor.fetchall()
-        cursor.close()
-
-        return dict(result[0])["dataManager"]
-
     def set_movable(self, role_id: int, guild_id: int, movable: bool):
         cursor = self.con.cursor()
         query = f"UPDATE Role SET movable = ? WHERE (roleId, guildId) = (?, ?);"
         cursor.execute(query, (movable, role_id, guild_id))
         cursor.close()
         self.con.commit()
-
-    def get_movable(self, role_id: int, guild_id: int) -> bool:
-        cursor = self.con.cursor()
-        query = f"SELECT movable FROM Role WHERE (roleId, guildId) = (?, ?);"
-        cursor.execute(query, (role_id, guild_id))
-        result = cursor.fetchall()
-        cursor.close()
-
-        return dict(result[0])["movable"]
 
     def role_exists_with(self, role_id: int, guild_id: int) -> bool:
         cursor = self.con.cursor()
@@ -164,12 +152,22 @@ class DatabaseHandler:
         cursor.close()
         self.con.commit()
 
+    def set_channel_event(self, guild_id: int, channel_id: int):
+        cursor = self.con.cursor()
+        query = f"UPDATE Guild SET channelEventId = ? WHERE guildId = ?;"
+        cursor.execute(query, (channel_id, guild_id))
+        cursor.close()
+        self.con.commit()
+
     def get_guild(self, guild_id: int) -> dict:
         cursor = self.con.cursor()
         query = f"SELECT * FROM Guild WHERE guildId = ?;"
         cursor.execute(query, (guild_id,))
         result = cursor.fetchall()
         cursor.close()
+
+        if len(result) > 1:
+            print(f"Il y a trop de guilds ayant l'id : {guild_id};")
 
         return dict(result[0])
 
@@ -181,7 +179,3 @@ class DatabaseHandler:
         cursor.close()
 
         return len(result) == 1
-
-"""dh = DatabaseHandler("database.db")
-dh.create_user(10392710, 1040628, "Titou")
-"""

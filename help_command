@@ -1,7 +1,7 @@
 setRoleManager: **setRoleManager <oui/non> <@Rôles>** Définit le rôle comme étant data manager ou pas
 getRoleManager: Donne tous les rôles qui sont data manager
 setRoleMovable: **setRoleMovable <oui/non> <@Rôles>** Définit le rôle comme étant attribuable automatiquement par les membres ou pas
-getAllChoices: Donne tous les choix de tous les membres
+getAllChoice: Donne tous les choix de tous les membres
 getAllAvailability: Donne toutes les disponibilités de tous les membres
 getAllUsers: Donne les pseudos de tous les membres
 getRoleMovable: Donne tous les rôles qui sont attribuables automatiquement par les membres

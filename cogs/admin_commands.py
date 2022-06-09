@@ -18,57 +18,101 @@ class AdminCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.database_handler = dbh.DatabaseHandler("database.db")
+        self.list_true = ['yes', 'y', 'true', 't', '1', 'enable', 'on', 'oui']
+        self.list_false = ['no', 'n', 'false', 'f', '0', 'disable', 'off', 'non']
+        self.list_all = ['all', 'a', 'everything', 'e', 'tout']
 
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def setRoleManager(self, ctx, manager, *, arg):
+    async def setRoleManager(self, ctx, manager):  # finir
         guild = ctx.guild
-        if arg in ("All", "Tout", "A"):
-            roles = guild.roles
-        else:
-            roles = ctx.message.role_mentions
-            if len(roles) == 0:
-                await ctx.send("Il manque la mention des rôles !")
+        guild_id = guild.id
+
+        if manager not in self.list_false + self.list_true:
+            await ctx.send("Je ne comprends pas ce que je dois faire, essayez avec oui/non.")
+            return
+
+        roles_dataManager = self.database_handler.get_all_roles(guild_id)
+        roles_dataManager = [guild.get_role(i["roleId"]) for i in roles_dataManager if i["dataManager"]]
+        if len(roles_dataManager) > 1:
+            print(f"{guild_id} : Il y a plusieurs rôles dataManager.")
+
+        if manager in self.list_false:
+            for role_dm in roles_dataManager:
+                role_dm_id = role_dm.id
+                self.database_handler.set_data_manager(role_dm_id, guild_id, False)
+            await ctx.send("Il n'y a plus de rôles dataManager")
+            return
+
+        roles_tgt = ctx.message.role_mentions
+        if len(roles_tgt) == 0:
+            await ctx.send("Il manque la mention du rôle !")
+            return
+        if len(roles_tgt) > 1:
+            await ctx.send("Il ne peut y avoir qu'un seul rôle dataManager par serveur !")
+            return
+
+        if manager in self.list_true:
+            role_tgt = roles_tgt[0]
+            role_tgt_id = role_tgt.id
+
+            def check(msg):
+                return msg.channel == ctx.channel and msg.author == ctx.author
+
+            do_data_manager = True
+            if len(roles_dataManager) > 0:
+                await ctx.send("Il y a déjà un rôle dataManager, voulez-vous le remplacer ? (oui/non)")
+
+                msg = await self.bot.wait_for('message', check=check, timeout=60)
+                text = msg.content
+                if text in self.list_true:
+                    for role_dm in roles_dataManager:
+                        role_dm_id = role_dm.id
+                        self.database_handler.set_data_manager(role_dm_id, guild_id, False)
+                else:
+                    do_data_manager = False
+
+            movable = self.database_handler.get_role(role_tgt_id, guild_id)["movable"]
+            if movable:
+                await ctx.send(f"Le rôle {role_tgt.name} est __movable__ "
+                               f"et ne peut pas être __dataManager__ en plus.")
+                self.database_handler.set_data_manager(role_tgt_id, guild_id, False)
+            elif do_data_manager:
+                self.database_handler.set_data_manager(role_tgt_id, guild_id, True)
+            else:
+                await ctx.send("Le rôle dataManager n'a pas été modifié.")
                 return
 
-        if manager in ('yes', 'y', 'true', 't', '1', 'enable', 'on'):
-            manager = True
-        elif manager in ('no', 'n', 'false', 'f', '0', 'disable', 'off'):
-            manager = False
-
-        guild_id = guild.id
-        for role in roles:
-            role_id = role.id
-            movable = self.database_handler.get_data_manager(role_id, guild_id)
-            if movable and manager:
-                await ctx.send(f"Le rôle **{role.name}** est __movable__ et ne peux pas être __data manager__ en plus.")
-                continue
-            self.database_handler.set_data_manager(role_id, guild_id, manager)
-
-        await ctx.send("Les rôles ont étés mis à jour.")
+            await ctx.send(f"Le rôle **{role_tgt.name}** est maintenant dataManager.")
 
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def getRoleManager(self, ctx):
+        # Définition des variables importantes
         guild = ctx.guild
         guild_id = guild.id
+
         roles = self.database_handler.get_all_roles(guild_id)
-        say = "Les rôles manager sont :\n"
-        for role in roles:
-            role_id = role["roleId"]
-            dataManager = role["dataManager"]
-            if dataManager:
-                role_guild = guild.get_role(role_id)
-                say += f"**``{role_guild.name}``**\n"
-        await ctx.send(say)
+        data_role = [guild.get_role(i["roleId"]) for i in roles if i["dataManager"]]
+
+        if len(data_role) == 0:
+            await ctx.send("Il n'y a pas de rôle dataManager")
+        else:
+            await ctx.send(f"Le rôle dataManager est **{data_role[0].name}**")
 
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def setRoleMovable(self, ctx, movable, *, arg):
+        # Définition des variables importantes
         guild = ctx.guild
         guild_id = guild.id
 
-        if arg in ("All", "Tout", "A"):
+        default_role = guild.default_role
+        default_perms = default_role.permissions
+        unauthorized_perm = [i[0] for i in default_perms if i[1] is False]
+
+        # Récupération des rôles qu'il faut rendre movable ou pas
+        if arg in self.list_all:
             roles = guild.roles
         else:
             roles = ctx.message.role_mentions
@@ -76,17 +120,48 @@ class AdminCommands(commands.Cog):
                 await ctx.send("Il manque la mention des rôles !")
                 return
 
-        if movable in ('yes', 'y', 'true', 't', '1', 'enable', 'on'):
-            movable = True
-        elif movable in ('no', 'n', 'false', 'f', '0', 'disable', 'off'):
-            movable = False
+        # Rendre movable :
+        if movable in self.list_true:
+            for role in roles:
+                role_id = role.id
 
-        for role in roles:
-            role_id = role.id
-            data_manager = self.database_handler.get_data_manager(role_id, guild_id)
-            if data_manager and movable:
-                await ctx.send(f"Le rôle **{role.name}** est __data manager__ et ne peux pas être __movable__ en plus.")
-                continue
-            self.database_handler.set_movable(role_id, guild_id, movable)
+                # Vérifie que le rôle ne soit pas @everyone
+                if role == default_role:
+                    await ctx.send("Le rôle **everyone** ne peut pas être movable")
+                    self.database_handler.set_movable(role_id, guild_id, False)
+                    continue
 
-        await ctx.send("Les rôles ont étés mis à jour.")
+                # Vérifie que le rôle ne soit pas dataManager
+                data_manager = self.database_handler.get_role(role_id, guild_id)["dataManager"]
+                if data_manager:
+                    await ctx.send(f"Le rôle **{role.name}** est __data manager__ "
+                                   f"et ne peux pas être __movable__ en plus.")
+                    self.database_handler.set_movable(role_id, guild_id, False)
+                    continue
+
+                # Vérifie que le rôle n'ait pas de permissions trop avancées
+                role_perms = role.permissions
+                role_perms = [i[0] for i in role_perms if i[1] is True]
+                role_unauthorized_perms = [i for i in role_perms if i in unauthorized_perm]
+
+                if len(role_unauthorized_perms) > 0:
+                    to_say = ""
+                    for i in role_unauthorized_perms:
+                        to_say += f"{i}, "
+                    to_say = to_say[:-2]
+
+                    await ctx.send(f"Le rôle **{role.name}** à des permissions trop avancées pour être movable :\n"
+                                   f"*{to_say}*")
+                    self.database_handler.set_movable(role_id, guild_id, False)
+                    continue
+
+                # Rend le rôle movable si tout est bon
+                self.database_handler.set_movable(role_id, guild_id, True)
+
+        # Rendre pas movable :
+        elif movable in self.list_false:
+            for role in roles:
+                role_id = role.id
+                self.database_handler.set_movable(role_id, guild_id, False)
+
+        await ctx.send("Rôles mis à jours.")
