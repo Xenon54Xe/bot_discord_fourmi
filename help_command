@@ -5,15 +5,16 @@ getAllChoice: Donne tous les choix de tous les membres
 getAllAvailability: Donne toutes les disponibilités de tous les membres
 getAllUsers: Donne les pseudos de tous les membres
 getRoleMovable: Donne tous les rôles qui sont attribuables automatiquement par les membres
-setChoice: **setChoice <Choix>** Définit vos choix
+setChoice: **setChoice <Text>** Définit vos choix
 updateUser: Met à jour votre pseudo dans la base de donnée
 getChoice: Donne vos choix
 addRole: **addRole <@Rôles>** Vous donne le(s) rôles choisis si ceux-ci sont déplaçeables
-setAvailability: **setAvailability <Availability>** Définit vos disponibilités
+setAvailability: **setAvailability <Text>>** Définit vos disponibilités
 removeRole: **removeRole <@Rôles>** Vous enlève le(s) rôles choisis si ceux-ci sont déplaçeables
 getAvailability: Donne vos disponibilités
-setEvent: **setEvent <Event>** Définit l'évent de la guilde
-getEvent: Donne l'évent de la guild
+setEvent: **setEvent <'Date'> <Text>** Définit l'évent de la guilde, ne pas oublier de mettre la date sous forme 'JJ/MM/AAAA hh-mm-ss' et de mettre les guillemets
+getEvent: Donne le ou les événements du serveur
+setChannelEvent: **setChannelEvent <#Channel>** Permet de définir le salon où sera envoyé les événements, par défaut le salon évenement est celui le plus en haut
 DataManagerCommands: Catégorie de commandes qui ne sont utilisables que par les membres ayant la permission **administrateur** ou un rôle **data manager** (faites __-getRoleManager__ pour savoir quels rôles sont data manager)
 AdminCommands: Catégorie de commandes qui ne sont utilisables que par les membres ayant la permission **administrateur**
 MemberCommands: Catégorie de commandes utilisables par tous les membres du serveur

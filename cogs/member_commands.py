@@ -7,6 +7,7 @@ p = path.abspath(".")
 sys.path.insert(1, p)
 
 import BDD.database_handler as dbh
+import functions as fc
 
 
 def setup(bot):
@@ -18,15 +19,14 @@ class MemberCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.database_handler = dbh.DatabaseHandler("database.db")
-        self.list_all = ['all', 'a', 'everything', 'e', 'tout']
-        self.list_none = ["None", "0", "", "Null", " "]
+        self.functions = fc.Function()
 
     @commands.command()
     async def updateUser(self, ctx, arg=None):
         guild = ctx.guild
         guild_id = guild.id
 
-        if arg in self.list_all:
+        if arg in self.functions.list_all:
             users = guild.members
         else:
             users = ctx.message.mentions
@@ -50,7 +50,7 @@ class MemberCommands(commands.Cog):
         guild = ctx.guild
         guild_id = guild.id
 
-        if choice in self.list_none:
+        if choice in self.functions.list_none:
             choice = None
 
         user_id = ctx.author.id
@@ -62,7 +62,7 @@ class MemberCommands(commands.Cog):
         guild = ctx.guild
         guild_id = guild.id
 
-        if args in self.list_none:
+        if args in self.functions.list_none:
             args = None
 
         user_id = ctx.author.id
@@ -128,6 +128,11 @@ class MemberCommands(commands.Cog):
         user = ctx.author
         channel = await user.create_dm()
 
-        event = self.database_handler.get_guild(guild_id)["event"]
-        await channel.send(f"L'évent de la guild est:\n"
-                           f"**{event}**")
+        event_db = self.database_handler.get_guild(guild_id)["event"]
+        event_dict = self.functions.str_to_dict(event_db, self.functions.first_splitter, self.functions.second_splitter)
+        say = f"Les évenements du serveur **{guild.name}** sont :\n"
+        for key in event_dict:
+            event = event_dict[key]
+            say += f"{event}\n"
+        say = say[:-1]
+        await channel.send(say)

@@ -8,6 +8,7 @@ p = path.abspath(".")
 sys.path.insert(1, p)
 
 import BDD.database_handler as dbh
+import functions as fc
 
 
 def setup(bot):
@@ -20,7 +21,7 @@ class DataManagerCommands(commands.Cog):
         self.bot = bot
         self.database_handler = dbh.DatabaseHandler("database.db")
         self.event_dict = {}
-        self.guillemet = ["'", "\""]
+        self.functions = fc.Function()
 
     def cog_check(self, ctx):
         member = ctx.author
@@ -36,38 +37,6 @@ class DataManagerCommands(commands.Cog):
             if manager:
                 return True
         return False
-
-    def take_numbers(self, string: str) -> str:
-        numbers = ""
-        num = ""
-        for letter in string:
-            try:
-                int(letter)
-                num += letter
-            except:
-                if num != "":
-                    numbers += f"{num} "
-                    num = ""
-        numbers = numbers[:-1]
-        return numbers
-
-    def dict_to_str(self, dictionary: dict, first_splitter: str, second_splitter: str) -> str:
-        string = ""
-        for key in dictionary:
-            value = dictionary[key]
-            string += f"{key}{first_splitter}{value}{second_splitter}"
-        string = string[:-2]
-        return string
-
-    def str_to_dict(self, string: str, first_splitter: str, second_splitter: str) -> dict:
-        dictionary = {}
-        sheets = string.split(second_splitter)
-        for sheet in sheets:
-            parts = sheet.split(first_splitter)
-            key = parts[0]
-            value = parts[1]
-            dictionary[key] = value
-        return dictionary
 
     @commands.command()
     async def setChannelEvent(self, ctx):
@@ -91,33 +60,25 @@ class DataManagerCommands(commands.Cog):
         guild = ctx.guild
         guild_id = guild.id
 
-        time_coat = 0
-        date_str = ""
-        for letter in event:
-            if letter in self.guillemet:
-                time_coat += 1
+        date_str = self.functions.take_parts(event, "'")  # vérifier que ça marche
+        date_used = self.functions.take_numbers(date_str[0])
 
-            if time_coat == 1:
-                date_str += letter
-            if time_coat == 2:
-                date_str += letter
-                break
-
-        date_used = self.take_numbers(date_str)
         try:
             date_struct = time.strptime(date_used, "%d %m %Y %H %M %S")
         except Exception as exc:
             print(exc)
-        date_float = time.mktime(date_struct)
+            date_float = 0
+        else:
+            date_float = time.mktime(date_struct)
 
         db_event_str: str = self.database_handler.get_guild(guild_id)["event"]
         if db_event_str != "":
-            event_lib = self.str_to_dict(db_event_str, "/:", "/.")
+            event_lib = self.functions.str_to_dict(db_event_str, self.functions.first_splitter, self.functions.second_splitter)
         else:
             event_lib = {}
         event_lib[date_float] = event
 
-        total_event = self.dict_to_str(event_lib, "/:", "/.")
+        total_event = self.functions.dict_to_str(event_lib, self.functions.first_splitter, self.functions.second_splitter)
 
         self.database_handler.set_event(guild_id, total_event)
         self.recall_event.start()
@@ -137,7 +98,7 @@ class DataManagerCommands(commands.Cog):
                 self.database_handler.set_channel_event(guild_id, channel.id)
 
             db_event = self.database_handler.get_guild(guild_id)["event"]
-            event_lib = self.str_to_dict(db_event, "/:", "/.")
+            event_lib = self.functions.str_to_dict(db_event, self.functions.first_splitter, self.functions.second_splitter)
 
             current_time = time.time()
             keys_to_pop = []
@@ -155,7 +116,7 @@ class DataManagerCommands(commands.Cog):
             for i in keys_to_pop:
                 event_lib.pop(i)
 
-            new_event_str = self.dict_to_str(event_lib, "/:", "/.")
+            new_event_str = self.functions.dict_to_str(event_lib, self.functions.first_splitter, self.functions.second_splitter)
             self.database_handler.set_event(guild_id, new_event_str)
 
             if len(event_lib) > 0:

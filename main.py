@@ -196,9 +196,8 @@ def reload_help_command():
     with open(p, "r", encoding="UTF-8") as file:
         cmds = file.readlines()
         for cmd in cmds:
-            try:
-                cmd_list = cmd.split(":")
-            except:
+            cmd_list = cmd.split(":")
+            if len(cmd_list) == 1:
                 print(f"Problème de définition de commande : '{cmd}'")
                 continue
             if len(cmd_list) > 2:
@@ -252,6 +251,18 @@ async def loading_error(ctx, error):
 
 @bot.event
 async def on_command_error(ctx, error):
+    if isinstance(error, commands.CheckFailure):
+        await ctx.send("Vous n'avez pas les permissions pour faire ça.")
+    elif isinstance(error, commands.CommandNotFound):
+        await ctx.send("Je ne connais pas cette commande.")
+    else:
+        print(error)
+
+
+bot.run(token)
+
+"""@bot.event
+async def on_command_error(ctx, error: discord.DiscordException):
     if isinstance(error, commands.CommandNotFound):
         await ctx.send("Je ne connais pas cette commande.")
 
@@ -260,10 +271,7 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.MissingPermissions):
         await ctx.send("Vous n'avez pas les permissions pour faire cette commande.")
     elif isinstance(error.original, discord.Forbidden):
-        await ctx.send("Oups, je n'ai pas le droit de faire ça, il me manque les permissions.")
-
-token = "OTgyNzIyODMzNTE4MDYzNjM2.GpANVJ.Tcm3ZlC8fJeXyIB_cTMBrUBYmjz3BEtBGb2ObI"
-bot.run(token)
+        await ctx.send("Oups, je n'ai pas le droit de faire ça, il me manque les permissions.")"""
 
 """ Exemple Embed
 @bot.command()

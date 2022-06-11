@@ -7,6 +7,7 @@ p = path.abspath(".")
 sys.path.insert(1, p)
 
 import BDD.database_handler as dbh
+import functions as fc
 
 
 def setup(bot):
@@ -18,9 +19,7 @@ class AdminCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.database_handler = dbh.DatabaseHandler("database.db")
-        self.list_true = ['yes', 'y', 'true', 't', '1', 'enable', 'on', 'oui']
-        self.list_false = ['no', 'n', 'false', 'f', '0', 'disable', 'off', 'non']
-        self.list_all = ['all', 'a', 'everything', 'e', 'tout']
+        self.functions = fc.Function()
 
     @commands.command()
     @commands.has_permissions(administrator=True)
@@ -28,7 +27,7 @@ class AdminCommands(commands.Cog):
         guild = ctx.guild
         guild_id = guild.id
 
-        if manager not in self.list_false + self.list_true:
+        if manager not in self.functions.list_false + self.functions.list_true:
             await ctx.send("Je ne comprends pas ce que je dois faire, essayez avec oui/non.")
             return
 
@@ -37,7 +36,7 @@ class AdminCommands(commands.Cog):
         if len(roles_dataManager) > 1:
             print(f"{guild_id} : Il y a plusieurs rôles dataManager.")
 
-        if manager in self.list_false:
+        if manager in self.functions.list_false:
             for role_dm in roles_dataManager:
                 role_dm_id = role_dm.id
                 self.database_handler.set_data_manager(role_dm_id, guild_id, False)
@@ -52,7 +51,7 @@ class AdminCommands(commands.Cog):
             await ctx.send("Il ne peut y avoir qu'un seul rôle dataManager par serveur !")
             return
 
-        if manager in self.list_true:
+        if manager in self.functions.list_true:
             role_tgt = roles_tgt[0]
             role_tgt_id = role_tgt.id
 
@@ -65,7 +64,7 @@ class AdminCommands(commands.Cog):
 
                 msg = await self.bot.wait_for('message', check=check, timeout=60)
                 text = msg.content
-                if text in self.list_true:
+                if text in self.functions.list_true:
                     for role_dm in roles_dataManager:
                         role_dm_id = role_dm.id
                         self.database_handler.set_data_manager(role_dm_id, guild_id, False)
@@ -112,7 +111,7 @@ class AdminCommands(commands.Cog):
         unauthorized_perm = [i[0] for i in default_perms if i[1] is False]
 
         # Récupération des rôles qu'il faut rendre movable ou pas
-        if arg in self.list_all:
+        if arg in self.functions.list_all:
             roles = guild.roles
         else:
             roles = ctx.message.role_mentions
@@ -121,7 +120,7 @@ class AdminCommands(commands.Cog):
                 return
 
         # Rendre movable :
-        if movable in self.list_true:
+        if movable in self.functions.list_true:
             for role in roles:
                 role_id = role.id
 
@@ -159,7 +158,7 @@ class AdminCommands(commands.Cog):
                 self.database_handler.set_movable(role_id, guild_id, True)
 
         # Rendre pas movable :
-        elif movable in self.list_false:
+        elif movable in self.functions.list_false:
             for role in roles:
                 role_id = role.id
                 self.database_handler.set_movable(role_id, guild_id, False)
