@@ -98,15 +98,6 @@ class DataManagerCommands(commands.Cog):
             return
 
         """
-        Vérifications secondaires
-        """
-        if data_name == "speciality" and arg not in self.functions.user_speciality + self.functions.list_none:
-            await ctx.send(f"Vous devez choisir entre les trois spécialités suivantes :\n"
-                           f"``{self.functions.user_speciality}`` ou __null__.")
-        if arg in self.functions.list_none:
-            arg = None
-
-        """
         Définition des membres dont il faut modifier les données
         """
         if type_of_user == "normal":
@@ -128,6 +119,23 @@ class DataManagerCommands(commands.Cog):
                                f"tous être modifié.")
 
         """
+        Vérifications secondaires
+        """
+        if data_name == "speciality" and arg not in self.functions.user_speciality + self.functions.list_none:
+            await ctx.send(f"Vous devez choisir entre les trois spécialités suivantes :\n"
+                           f"``{self.functions.user_speciality}`` ou __null__.")
+        elif data_name == "percentage":
+            percent_list = self.functions.take_data_for_percentage(arg)
+            if percent_list[0] is False:
+                await ctx.send(f"Vous vous êtes trompé dans le dernier argument. {percent_list[1]}")
+                return
+            else:
+                percent_list = percent_list[1]
+
+        if arg in self.functions.list_none:
+            arg = None
+
+        """
         Modification des données
         """
         for user in users:
@@ -136,8 +144,29 @@ class DataManagerCommands(commands.Cog):
                 self.database_handler.set_choice(new_choices=arg, bdd_id=bdd_id)
             elif data_name == "availability":
                 self.database_handler.set_availability(availability=arg, bdd_id=bdd_id)
-            else:
+            elif data_name == "speciality":
                 self.database_handler.set_speciality(speciality=arg, bdd_id=bdd_id)
+            elif data_name == "percentage":
+                # récupération des données de la BDD
+                percentage_db = self.database_handler.get_user(bdd_id=bdd_id)["percentage"]
+                percentage_unpack = self.functions.unpack_str_to_dict_list(percentage_db)
+                if percentage_unpack == {}:
+                    percentage_unpack = {
+                        "army": [0, 0, 0],
+                        "cac": [0, 0, 0],
+                        "vel": [0, 0, 0],
+                        "tir": [0, 0, 0]
+                    }
+
+                # ajout des valeur
+                for case in percent_list:
+                    key = case[0]
+                    nums = case[1]
+                    percentage_unpack[key] = nums
+
+                # mise à jour de la BDD
+                arg = self.functions.pack_dict_list_to_str(percentage_unpack)
+                self.database_handler.set_percentages(bdd_id=bdd_id, percentage=arg)
 
         await ctx.send("Données mis à jour.")
 
@@ -276,6 +305,51 @@ class DataManagerCommands(commands.Cog):
                     say = say[:-1]
                     say += f"{warning}\n"
             await channel.send(say)
+
+    # donne les pourcentages de tous les membres
+    @commands.command()
+    async def getAllPercentage(self, ctx):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        user = ctx.author
+        channel = await user.create_dm()
+        users = self.database_handler.get_all_users(guild_id)
+
+        warning = self.functions.warning
+        await channel.send(f"__Pourcentages du serveur **{guild.name}**__\n"
+                       f"{warning} = Utilisateur virtuel\n")
+        for user in users:
+            if user["userId"] == -1:
+                username = f"**{user['username']}** {warning}"
+            else:
+                username = f"**{user['username']}**"
+            percentage_db = user["percentage"]
+            percentage_unpack = self.functions.unpack_str_to_dict_list(percentage_db)
+
+            embed = discord.Embed(title=username, description="Vous avez demandé les pourcentages ?")
+
+            for key in percentage_unpack.keys():
+                value = percentage_unpack[key]
+                attack = value[0]
+                defense = value[1]
+                life = value[2]
+
+                if key == "army":
+                    name = "Armée"
+                elif key == "cac":
+                    name = "Corps à corps"
+                elif key == "vel":
+                    name = "Véloces"
+                else:
+                    name = "Tireuses"
+
+                embed.add_field(name=name, value=f"``Attaque``: **{attack}**\n``Défense``: **{defense}**\n``Vie    ``: **{life}**")
+
+            if len(percentage_unpack.keys()) == 0:
+                embed.set_footer(text="Il semblerait que ce membre n'a pas rempli ses pourcentages...")
+
+            await channel.send(embed=embed)
 
     # réinitialise les données de tous les membres
     @commands.command()

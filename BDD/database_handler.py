@@ -52,12 +52,16 @@ class DatabaseHandler:
         return map(dict, result)
 
     # retourne les infos d'un utilisateur
-    def get_user(self, user_id: int, guild_id: int) -> dict:
-        if not self.user_exists_with(user_id, guild_id):
-            raise Exception(f"The user with the id '{user_id}' not already exist.")
+    def get_user(self, user_id: int = None, guild_id: int = None, bdd_id: int = None) -> dict:
         cursor = self.con.cursor()
-        query = f"SELECT * FROM User WHERE (userId, guildId) = (?, ?);"
-        cursor.execute(query, (user_id, guild_id))
+        if bdd_id is None:
+            if not self.user_exists_with(user_id, guild_id):
+                raise Exception(f"The user with the id '{user_id}' not already exist.")
+            query = f"SELECT * FROM User WHERE (userId, guildId) = (?, ?);"
+            cursor.execute(query, (user_id, guild_id))
+        else:
+            query = "SELECT * FROM User WHERE id = ?;"
+            cursor.execute(query, (bdd_id,))
         result = cursor.fetchall()
         cursor.close()
 
@@ -96,6 +100,18 @@ class DatabaseHandler:
         else:
             query = "UPDATE User SET speciality = ? WHERE id = ?;"
             cursor.execute(query, (speciality, bdd_id))
+        cursor.close()
+        self.con.commit()
+
+    # définit les pourcentages d'un utilisateur
+    def set_percentages(self, user_id: int = None, guild_id: int = None, percentage: str = None, bdd_id: int = None):
+        cursor = self.con.cursor()
+        if bdd_id is None:
+            query = f"UPDATE User SET percentage = ? WHERE (userId, guildId) = (?, ?);"
+            cursor.execute(query, (percentage, user_id, guild_id))
+        else:
+            query = "UPDATE User SET percentage = ? WHERE id = ?;"
+            cursor.execute(query, (percentage, bdd_id))
         cursor.close()
         self.con.commit()
 

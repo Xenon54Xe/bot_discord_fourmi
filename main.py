@@ -238,6 +238,7 @@ def unload_all_cogs():
     print("Cogs loaded")
 
 
+# ajoute une aide
 @bot.command()
 @commands.check(is_bot_owner)
 async def addHelp(ctx):
@@ -249,7 +250,9 @@ async def addHelp(ctx):
 
     content: str = ctx.message.content
     name = functions.take_parts(content, " ", take_first=True)[0]
+    print(name)
     value = content.replace(f'-addHelp {name} ', "")
+    print(value)
 
     if name == "" or value == "":
         await ctx.send("Vous avez oublié le nom de la commande ou l'aide.")
@@ -286,6 +289,7 @@ async def addHelp(ctx):
     await ctx.send(f"Aide pour la commande __'{name}'__ mise à jour.")
 
 
+# commande qui met à jour les aides
 @bot.command()
 @commands.check(is_bot_owner)
 async def reloadHC(ctx):
@@ -293,16 +297,17 @@ async def reloadHC(ctx):
     await ctx.send("Help_command rechargé.")
 
 
-
+# qui met à jour les aides
 def reload_help_command():
     p = os.path.abspath("help_command")
     global help_commands
     with open(p, "r", encoding="UTF-8") as file:
         text = file.readlines()[0]
-        help_commands = functions.str_to_dict(text)
+        help_commands = functions.str_to_dict(text, auto_reformat=False)
         file.close()
 
 
+# commande help
 @bot.command()
 async def help(ctx, arg=None):
     if arg is not None:
@@ -347,6 +352,7 @@ async def help(ctx, arg=None):
             ('setChoice', 'définir vos choix'),
             ('setAvailability', 'définir vos disponibilités'),
             ('setSpeciality', 'définir vos spécialités'),
+            ('setPercentage', 'définir vos pourcentages'),
             ('setAd', 'créer une annonce'),
             ('getAd', 'donne vos annonces'),
             ('delAd', 'supprimer une annonce'),
@@ -365,6 +371,7 @@ async def help(ctx, arg=None):
             ('getAllChoice', 'donne tous les choix des joueurs'),
             ('getAllAvailability', 'donne toutes les disponibilités'),
             ('getAllSpeciality', 'donne toutes les spécialités'),
+            ('getAllPercentage', 'donne tous les pourcentages'),
             ('reset', 'réinitialise les choix et les disponibilités')
         ],
 
@@ -506,7 +513,7 @@ async def on_command_error(ctx, error):
         raise error
 
 # démarrage du bot
-token = "OTgyNzIyODMzNTE4MDYzNjM2.GgNPoh.QBUzkETAsfqLhkoqVIHT-Kc2YCID8huAiD4uiA"
+token = "OTgyNzIyODMzNTE4MDYzNjM2.GcrzIv.5g2_34neFaLZnwsj7alSECWYgeigkyWO5qUEow"
 try:
     bot.run(token)
 except Exception as exc:

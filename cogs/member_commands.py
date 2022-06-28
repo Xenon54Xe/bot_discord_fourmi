@@ -73,6 +73,43 @@ class MemberCommands(commands.Cog):
 
         await ctx.send("Spécialités mis à jour.")
 
+    # définit les pourcentages du membre
+    @commands.command()
+    async def setPercentage(self, ctx, *, args: str):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        member_id = ctx.author.id
+
+        # récupération des données
+        percent_list = self.functions.take_data_for_percentage(args)
+        if percent_list[0] is False:
+            await ctx.send(percent_list[1])
+        else:
+            percent_list = percent_list[1]
+
+        # récupération des données de la BDD
+        percentage_db = self.database_handler.get_user(member_id, guild_id)["percentage"]
+        percentage_unpack = self.functions.unpack_str_to_dict_list(percentage_db)
+        if percentage_unpack == {}:
+            percentage_unpack = {
+                "army": [0, 0, 0],
+                "cac": [0, 0, 0],
+                "vel": [0, 0, 0],
+                "tir": [0, 0, 0]
+            }
+
+        # ajout des valeur
+        for case in percent_list:
+            key = case[0]
+            nums = case[1]
+            percentage_unpack[key] = nums
+
+        # mis à jour de la BDD
+        percentage_pack = self.functions.pack_dict_list_to_str(percentage_unpack)
+        self.database_handler.set_percentages(member_id, guild_id, percentage_pack)
+        await ctx.send("Pourcentage mis à jour")
+
     # créé un nouvelle annonce si le membre n'a pas déjà atteint sa limite
     @commands.command()
     async def setAd(self, ctx, title, desc, name, *, value):

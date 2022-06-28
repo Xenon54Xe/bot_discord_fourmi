@@ -22,8 +22,9 @@ class Function:
         self.list_splitter = "/l:"
 
         self.event_keys = ["date", "event", "organisation", "permanent", "interval"]
-        self.user_data_name = ["choice", "availability", "speciality"]
+        self.user_data_name = ["choice", "availability", "speciality", "percentage"]
         self.user_speciality = ["cac", "vel", "tir"]
+        self.user_data_percentage = ["army"] + self.user_speciality
         self.user_type = ["normal", "virtual"]
         self.warning = "__**/!\\ **__"
 
@@ -60,6 +61,15 @@ class Function:
                 break
 
         return parts
+
+    def take_parts_with_numbers(self, string: str, list: [tuple]) -> [str]:
+        new_list = []
+        for tpl in list:
+            text = ""
+            for i in range(tpl[0], tpl[1]):
+                text += string[i]
+            new_list.append(text)
+        return new_list
 
     # retourne un texte dans lequel il y a tous les nombres séparés par un espace
     # ou retourne une liste de tous les nombres
@@ -191,6 +201,8 @@ class Function:
     # retourne un dictionnaire de listes depuis un texte
     def unpack_str_to_dict_list(self, string: str, value_splitter: str = "/v:", dict_splitter: str = "/d:",
                               list_splitter: str = "/l:") -> dict[int: list]:
+        if string == "" or string is None:
+            return {}
         try:
             new_dict = self.str_to_dict(string, value_splitter, dict_splitter, auto_reformat=False)
             for key in new_dict.keys():
@@ -286,6 +298,39 @@ class Function:
         found_users = [i for i in users if i["username"] == name]
 
         return found_users
+
+    def take_data_for_percentage(self, args) -> (bool, vars()):
+        # trouver les clés
+        keys_pos = []
+        for i in self.user_data_percentage:
+            try:
+                find = self.find(args, i)[0]
+                keys_pos.append(find)
+            except:
+                continue
+
+        # définir les zones où chercher
+        list_pos = []
+        for i in range(len(keys_pos)):
+            start = keys_pos[i][0]
+            try:
+                end = keys_pos[i + 1][0]
+            except:
+                end = len(args)
+            list_pos.append((start, end))
+
+        # récupérer les parties et les mettre dans une liste
+        parts = self.take_parts_with_numbers(args, list_pos)
+        percent_list = []
+        for i in parts:
+            y = self.take_numbers(i, to_int=True)
+            if len(y) != 3:
+                return (False, f"Dans __'{i}'__ il faut 3 nombres. Et il n'y a que **"
+                        f"'{self.take_numbers(i)}'**.")
+            x = i[0:4].replace(" ", "")
+            percent_list.append((x, y))
+
+        return True, percent_list
 
     # met à jour les utilisateurs d'un serveur
     def update_members(self, guild: discord.Guild):
