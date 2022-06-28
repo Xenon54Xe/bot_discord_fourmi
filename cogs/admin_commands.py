@@ -16,6 +16,7 @@ class AdminCommands(commands.Cog):
         self.database_handler = DatabaseHandler("database.db")
         self.functions = fc.Function()
 
+    # définit le rôle manager du serveur
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def setRoleManager(self, ctx, is_manager):
@@ -72,6 +73,7 @@ class AdminCommands(commands.Cog):
 
         await ctx.send("Rôle data manager mis à jour.")
 
+    # donne le rôle manager du serveur
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def getRoleManager(self, ctx):
@@ -86,6 +88,7 @@ class AdminCommands(commands.Cog):
         else:
             await ctx.send(f"Le rôle dataManager est **{data_role[0].name}**")
 
+    # définit le salon des commandes
     @commands.command()
     async def setCMDChannel(self, ctx, arg):
         guild = ctx.guild
@@ -102,6 +105,7 @@ class AdminCommands(commands.Cog):
             self.database_handler.set_cmd_channel(guild_id, channels[0].id)
             await ctx.send("Salon des commandes mis à jour.")
 
+    # definit le(s) rôle(s) movable du serveur
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def setRoleMovable(self, ctx, movable, *, arg):

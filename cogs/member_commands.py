@@ -16,6 +16,7 @@ class MemberCommands(commands.Cog):
         self.database_handler = DatabaseHandler("database.db")
         self.functions = fc.Function()
 
+    # ajoute une suggestion dans le serveur
     @commands.command()
     async def suggest(self, ctx, *, suggestion: str):
         guild = ctx.guild
@@ -30,100 +31,37 @@ class MemberCommands(commands.Cog):
 
         await ctx.send("Suggestion envoyée")
 
+    # définit les choix du membre
     @commands.command()
     async def setChoice(self, ctx, *, choice: str):
         guild = ctx.guild
         guild_id = guild.id
 
-        members = ctx.message.mentions
-
-        for member in members:
-            text = f"<@{member.id}>"
-            choice = choice.replace(text, "")
-
-        while len(self.functions.find(choice, "  ")) > 0:
-            choice = choice.replace("  ", " ")
-
-        while choice.startswith(" "):
-            choice = choice[1:]
-
-        while choice.endswith(" "):
-            choice = choice[:-1]
-
         if choice in self.functions.list_none:
             choice = None
-
-        if len(members) > 0:
-            if not self.functions.is_data_manager(ctx):
-                await ctx.send("Vous n'avez pas les permissions pour modifier les choix de quelqu'un d'autre.")
-                return
-            for member in members:
-                user_id = member.id
-                self.database_handler.set_choice(user_id, guild_id, choice)
-            await ctx.send("Choix des membres mis à jour.")
-            return
 
         self.database_handler.set_choice(ctx.author.id, guild_id, choice)
 
         await ctx.send("Choix mis à jour.")
 
+    # définit les disponibilités du membre
     @commands.command()
     async def setAvailability(self, ctx, *, arg: str):
         guild = ctx.guild
         guild_id = guild.id
 
-        members = ctx.message.mentions
-        print(members)
-
-        for member in members:
-            text = f"<@{member.id}>"
-            arg = arg.replace(text, "")
-
-        while len(self.functions.find(arg, "  ")) > 0:
-            arg = arg.replace("  ", " ")
-
-        while arg.startswith(" "):
-            arg = arg[1:]
-
-        while arg.endswith(" "):
-            arg = arg[:-1]
-
         if arg in self.functions.list_none:
             arg = None
-
-        if len(members) > 0:
-            if not self.functions.is_data_manager(ctx):
-                await ctx.send("Vous n'avez pas les permissions pour modifier les disponibilités de quelqu'un d'autre.")
-                return
-            for member in members:
-                user_id = member.id
-                self.database_handler.set_availability(user_id, guild_id, arg)
-            await ctx.send("Disponibilités des membres mis à jour.")
-            return
 
         self.database_handler.set_availability(ctx.author.id, guild_id, arg)
 
         await ctx.send("Disponibilités mis à jour.")
 
+    # définit les spécialités du membre
     @commands.command()
     async def setSpeciality(self, ctx, *, arg: str):
         guild = ctx.guild
         guild_id = guild.id
-
-        members = ctx.message.mentions
-
-        for member in members:
-            text = f"<@{member.id}>"
-            arg = arg.replace(text, "")
-
-        while len(self.functions.find(arg, "  ")) > 0:
-            arg = arg.replace("  ", " ")
-
-        while arg.startswith(" "):
-            arg = arg[1:]
-
-        while arg.endswith(" "):
-            arg = arg[:-1]
 
         if not arg in self.functions.list_none + ["cac", "vel", "tir"]:
             await ctx.send("Vous devez choisir entre __cac__, __vel__, __tir__ et __null__.")
@@ -131,20 +69,11 @@ class MemberCommands(commands.Cog):
         if arg in self.functions.list_none:
             arg = None
 
-        if len(members) > 0:
-            if not self.functions.is_data_manager(ctx):
-                await ctx.send("Vous n'avez pas les permissions pour modifier les spécialités de quelqu'un d'autre.")
-                return
-            for member in members:
-                user_id = member.id
-                self.database_handler.set_speciality(user_id, guild_id, arg)
-            await ctx.send("Spécialités des membres mis à jour.")
-            return
-
         self.database_handler.set_speciality(ctx.author.id, guild_id, arg)
 
         await ctx.send("Spécialités mis à jour.")
 
+    # créé un nouvelle annonce si le membre n'a pas déjà atteint sa limite
     @commands.command()
     async def setAd(self, ctx, title, desc, name, *, value):
         guild = ctx.guild
@@ -192,6 +121,7 @@ class MemberCommands(commands.Cog):
 
         await ctx.send("Annonce envoyée.")
 
+    # donne toutes les annonces du membre
     @commands.command()
     async def getAd(self, ctx):
         guild = ctx.guild
@@ -229,6 +159,7 @@ class MemberCommands(commands.Cog):
         user_ad_str = self.functions.list_to_str(user_ad_list)
         self.database_handler.set_ad(member_id, guild_id, user_ad_str)
 
+    # supprime une annonce du membre avec l'id du message
     @commands.command()
     async def delAd(self, ctx, arg):
         guild = ctx.guild
@@ -270,6 +201,7 @@ class MemberCommands(commands.Cog):
         user_ad_str = self.functions.list_to_str(user_ad_list)
         self.database_handler.set_ad(member_id, guild_id, user_ad_str)
 
+    # donne tous les rôles movable
     @commands.command()
     async def getRoleMovable(self, ctx):
         guild = ctx.guild
@@ -291,6 +223,7 @@ class MemberCommands(commands.Cog):
             return
         await ctx.send(say)
 
+    # donne les rôles si ils sont movable
     @commands.command()
     async def addRole(self, ctx, arg: str = None):
         guild = ctx.guild
@@ -323,6 +256,7 @@ class MemberCommands(commands.Cog):
 
         await ctx.send("Rôles mis à jour.")
 
+    # supprime les rôles si ils sont movable
     @commands.command()
     async def removeRole(self, ctx, arg: str = None):
         guild = ctx.guild

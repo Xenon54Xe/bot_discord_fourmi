@@ -5,21 +5,307 @@ import asyncio
 import discord
 from discord.ext import commands, tasks
 
-from bot_discord_fourmi import functions as fc
+from bot_discord_fourmi.functions import Function
 from bot_discord_fourmi.BDD.database_handler import DatabaseHandler
 
 
 def setup(bot):
     bot.add_cog(DataManagerCommands(bot))
-    print("Loading DataManagerCommands...")
+    bot.add_cog(EventCommands(bot))
+    print("Loading DataManagerCommands and EventCommands...")
 
 
 class DataManagerCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.database_handler = DatabaseHandler("database.db")
-        self.event_dict = {}
-        self.functions = fc.Function()
+        self.functions = Function()
+
+    def cog_check(self, ctx):
+        return self.functions.is_data_manager(ctx)
+
+    # ajoute un utilisateur virtuel
+    @commands.command()
+    async def addUser(self, ctx, name):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        find = self.functions.find_users_with_name(guild_id, name)
+        if len(find) > 0:
+            await ctx.send(f"Il existe déjà un utilisateur avec le nom __'{name}'__.")
+            return
+        self.database_handler.add_user(-1, guild_id, name)
+
+        await ctx.send("Membre ajouté.")
+
+    # donne les pseudos de tous les membres du serveur (membres virtuels compris)
+    @commands.command()
+    async def getUsername(self, ctx):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        channel = await ctx.author.create_dm()
+
+        users = self.database_handler.get_all_users(guild_id)
+
+        say = f"List des noms des utilisateurs :\n"
+        say += "__**/!\\ **__ = Utilisateur virtuel\n"
+        for user in users:
+            say += f"``{user['username']}``\n"
+            if user["userId"] == -1:
+                say = say[:-1]
+                say += "__**/!\\ **__"
+        await channel.send(say)
+
+    # supprime un utilisateur virtuel
+    @commands.command()
+    async def removeUser(self, ctx, name):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        users = self.functions.find_users_with_name(guild_id, name)
+        if len(users) == 0:
+            await ctx.send(f"Le membre ayant le nom '{name}' n'existe pas.")
+            return
+        elif len(users) > 1:
+            await ctx.send(f"Il y a {len(users)} membres ayant le nom __'{name}'__. Seuls les membres "
+                           f"qui ont étés ajoutés manuellement seront supprimés.")
+        users_to_remove = [i for i in users if i["userId"] == -1]
+
+        for user in users_to_remove:
+            bdd_id = user["id"]
+            self.database_handler.remove_user(bdd_id=bdd_id)
+
+        await ctx.send("Utilisateur(s) supprimé(s).")
+
+    # définit les données d'un/d' autre(s) membre(s)
+    @commands.command()
+    async def setOtherData(self, ctx, data_name, type_of_user, username, *, arg: str):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        """
+        Vérifications principales
+        """
+        if data_name not in self.functions.user_data_name:
+            await ctx.send(f"Vous devez renseigner le type de donnée que vous voulez modifier :\n"
+                           f"``{self.functions.user_data_name}``")
+            return
+
+        if type_of_user not in self.functions.user_type:
+            await ctx.send(f"Vous devez renseigner le type d'utilisateur :\n"
+                           f"``{self.functions.user_type}``")
+            return
+
+        """
+        Vérifications secondaires
+        """
+        if data_name == "speciality" and arg not in self.functions.user_speciality + self.functions.list_none:
+            await ctx.send(f"Vous devez choisir entre les trois spécialités suivantes :\n"
+                           f"``{self.functions.user_speciality}`` ou __null__.")
+        if arg in self.functions.list_none:
+            arg = None
+
+        """
+        Définition des membres dont il faut modifier les données
+        """
+        if type_of_user == "normal":
+            users_message = ctx.message.mentions
+            users = []
+            for user in users_message:
+                users.append(self.database_handler.get_user(user.id, guild_id))
+                arg = arg.replace(f"<@{user.id}>", "")
+
+            while arg.startswith(" "):
+                arg = arg[1:]
+        else:
+            users = self.functions.find_users_with_name(guild_id, username)
+            if len(users) == 0:
+                await ctx.send(f"L'utilisateur avec le nom __'{username}'__ n'a pas été trouvé.")
+                return
+            elif len(users) > 1:
+                await ctx.send(f"Il y a plusieurs utilisateurs avec le pseudo __'{username}'__ et il vont "
+                               f"tous être modifié.")
+
+        """
+        Modification des données
+        """
+        for user in users:
+            bdd_id = user["id"]
+            if data_name == "choice":
+                self.database_handler.set_choice(new_choices=arg, bdd_id=bdd_id)
+            elif data_name == "availability":
+                self.database_handler.set_availability(availability=arg, bdd_id=bdd_id)
+            else:
+                self.database_handler.set_speciality(speciality=arg, bdd_id=bdd_id)
+
+        await ctx.send("Données mis à jour.")
+
+    # définit le nombre d'annonces qu'un rôle peut faire
+    @commands.command()
+    async def setAdCount(self, ctx, value):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        roles = ctx.message.role_mentions
+
+        value = self.functions.reformat_type(value)
+
+        if not isinstance(value, int):
+            await ctx.send(f"La valeur '{value}' que vous avez renseigné n'est pas un nombre entier.")
+
+        if len(roles) == 0:
+            await ctx.send("Vous avez oublié la mention du ou des rôles.")
+            return
+
+        for role in roles:
+            role_id = role.id
+            self.database_handler.set_role_ad_value(role_id, guild_id, value)
+
+        await ctx.send("Nombre d'annonces des rôles mis à jour.")
+
+    # définit le salon des annnonces du serveur
+    @commands.command()
+    async def setAdChannel(self, ctx):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        channel_mentions = ctx.message.channel_mentions
+        if len(channel_mentions) == 0:
+            await ctx.send("Vous avez oublié la mention du salon textuel.")
+            return
+        elif len(channel_mentions) > 1:
+            await ctx.send("Il ne faut qu'une seule mention de salon textuel.")
+
+        channel_id = channel_mentions[0].id
+        self.database_handler.set_ad_channel(guild_id, channel_id)
+
+        await ctx.send("Salon annonces mis à jour.")
+
+    # donne les choix de tous les membres
+    @commands.command()
+    async def getAllChoice(self, ctx):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        user = ctx.author
+        channel = await user.create_dm()
+        users = self.database_handler.get_all_users(guild_id)
+
+        warning = self.functions.warning
+        say = f"__Choix du serveur **{guild.name}**__\n"
+        say += f"{warning} = Utilisateur virtuel\n"
+        for user in users:
+            username = user["username"]
+            count = len(username)
+            space = 20 - count
+            choice = user["choice"]
+            if choice is None:
+                choice = ""
+            say += f"``{username}{' ' * space}`` : {choice}\n"
+            if user["userId"] == -1:
+                say = say[:-1]
+                say += f"{warning}\n"
+        await channel.send(say)
+
+    # donne les disponibilités de tous les membres
+    @commands.command()
+    async def getAllAvailability(self, ctx):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        user = ctx.author
+        channel = await user.create_dm()
+        users = self.database_handler.get_all_users(guild_id)
+
+        warning = self.functions.warning
+        say = f"__Disponibilités du serveur **{guild.name}**__\n"
+        say += f"{warning} = Utilisateur virtuel\n"
+        for user in users:
+            username = user["username"]
+            count = len(username)
+            space = 20 - count
+            choice = user["availability"]
+            if choice is None:
+                choice = ""
+            say += f"``{username}{' ' * space}`` : {choice}\n"
+            if user["userId"] == -1:
+                say = say[:-1]
+                say += f"{warning}\n"
+        await channel.send(say)
+
+    # donne les spécialités de tous les membres
+    @commands.command()
+    async def getAllSpeciality(self, ctx):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        member = ctx.author
+        channel = await member.create_dm()
+
+        members_db = self.database_handler.get_all_users(guild_id)
+
+        dictionary = {
+            "cac": [],
+            "vel": [],
+            "tir": [],
+            None: []
+        }
+        for member_db in members_db:
+            spe = member_db["speciality"]
+            dictionary[spe].append(member_db)
+
+        warning = self.functions.warning
+        await channel.send(f"__Spécialités du serveur **{guild.name}**__\n"
+                           f"{warning} = Utilisateur virtuel\n")
+        for key in dictionary.keys():
+            name = key
+            if name == "cac":
+                name = "corps à corps"
+            elif name == "vel":
+                name = "véloces"
+            elif name == "tir":
+                name = "tireuses"
+            else:
+                name = "pas précisée"
+
+            say = f"**```Nombre de spécialité {name} : {len(dictionary[key])}```**"
+            for member_dict in dictionary[key]:
+                say += f"``{member_dict['username']}``\n"
+                if member_dict["userId"] == -1:
+                    say = say[:-1]
+                    say += f"{warning}\n"
+            await channel.send(say)
+
+    # réinitialise les données de tous les membres
+    @commands.command()
+    async def reset(self, ctx, arg):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        if arg not in ["availability", "choice"]:
+            await ctx.send("Il faut choisir entre **availability** et **choice**")
+            return
+
+        for user in guild.members:
+            user_id = user.id
+
+            if arg == "availability":
+                if self.database_handler.user_exists_with(user_id, guild_id):
+                    self.database_handler.set_availability(user_id, guild_id)
+            elif arg == "choice":
+                if self.database_handler.user_exists_with(user_id, guild_id):
+                    self.database_handler.set_choice(user_id, guild_id)
+
+        await ctx.send("Réinitialisation effectuée.")
+
+
+class EventCommands(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.database_handler = DatabaseHandler("database.db")
+        self.functions = Function()
+
         self.interval = 3600
         self.time_before_call_date = 900
         self.recall_event.change_interval(seconds=self.interval)
@@ -27,9 +313,7 @@ class DataManagerCommands(commands.Cog):
         self.already_running = False
         self.recall_event.start()
 
-    def cog_check(self, ctx):
-        return self.functions.is_data_manager(ctx)
-
+    # créé ou modifie un évenement du serveur
     @commands.command()
     async def setEvent(self, ctx, event_id: str, key: str, *, value: str):
         print("###START setEvent###")
@@ -150,6 +434,124 @@ class DataManagerCommands(commands.Cog):
 
         await ctx.send("Evenement mis à jour.")
 
+    # donne tous les évenements du serveur
+    @commands.command()
+    async def getEvent(self, ctx):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        event_db = self.database_handler.get_guild(guild_id)["event"]
+
+        if event_db != "" and event_db is not None:
+            event_list = self.functions.unpack_str_to_list_dict(event_db)
+        else:
+            await ctx.send("Il n'y a pas d'évenements sur ce serveur.")
+            return
+
+        for event_lib in event_list:
+            embed = self.embed_event(event_lib, title="GetEvent", description="", show_utc=True, show_id=True)
+            await ctx.send(embed=embed)
+
+    # supprime un évenement du serveur
+    @commands.command()
+    async def delEvent(self, ctx, *, event_id):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        try:
+            event_id = int(event_id)
+        except:
+            await ctx.send(f"Il faut l'identifiant d'un évenement, __'{event_id}'__ n'est pas un identifiant.")
+
+        event_db = self.database_handler.get_guild(guild_id)["event"]
+        event_unpack = self.functions.unpack_str_to_list_dict(event_db)
+
+        if len(event_unpack) == 0:
+            await ctx.send("Il n'y a pas d'évenements de prévus.")
+            return
+
+        event_to_destroy = None
+        for event in event_unpack:
+            if event["id"] == event_id:
+                event_to_destroy = event
+                break
+
+        if event_to_destroy is not None:
+            event_unpack.remove(event_to_destroy)
+        else:
+            await ctx.send(f"L'évenement avec l'id __'{event_id}'__ n'a pas été trouvé.")
+            return
+
+        event_str = self.functions.pack_list_dict_to_str(event_unpack)
+        self.database_handler.set_event(guild_id, event_str)
+
+        await ctx.send("Evenement supprimé.")
+
+    # définit le(s) rôle(s) qui sont mentionnés quand un évenement est affiché
+    @commands.command()
+    async def setRoleEvent(self, ctx, arg):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        roles = ctx.message.role_mentions
+
+        print(arg)
+        if arg in self.functions.list_true:
+            arg = True
+        elif arg in self.functions.list_false:
+            arg = False
+        else:
+            await ctx.send("Je n'ai pas bien compris ce que vous voulez faire. Essayez avec **oui** ou **non**")
+            return
+
+        if len(roles) == 0:
+            await ctx.send("Vous avez oublié la mention du ou des rôles.")
+            return
+
+        for role in roles:
+            role_id = role.id
+            self.database_handler.set_role_is_event(role_id, guild_id, arg)
+
+        await ctx.send("Rôle évent mis à jour.")
+
+    # définit le salon où sont affichés les évenements
+    @commands.command()
+    async def setChannelEvent(self, ctx):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        channel_mentions = ctx.message.channel_mentions
+        if len(channel_mentions) == 0:
+            await ctx.send("Vous avez oublié la mention du salon textuel.")
+            return
+        elif len(channel_mentions) > 1:
+            await ctx.send("Il ne faut qu'une seule mention de salon textuel.")
+
+        channel_id = channel_mentions[0].id
+        self.database_handler.set_event_channel(guild_id, channel_id)
+
+        await ctx.send("Salon évenement mis à jour.")
+
+    # définit le temps qui sépare le premier et le deuxième affichage dans le serveur
+    @commands.command()
+    async def setTimeBeforeCall(self, ctx, seconds):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        value = self.functions.reformat_type(seconds)
+        if not isinstance(value, int):
+            await ctx.send(f"Il faut un nombre, **{seconds}** n'est pas un nombre.")
+            return
+
+        if value < 900:
+            await ctx.send("La valeur minimale est de **900** secondes, ce qui fait 15 minutes")
+            value = 900
+
+        self.database_handler.set_time_before_call(guild_id, value)
+        self.recall_event.restart()
+        await ctx.send("Temps d'envoit avant la date de l'évenement mis à jour.")
+
+    # boucle qui permet d'afficher les évenements à la bonne date
     @tasks.loop(seconds=10)
     async def recall_event(self):
         # Pour éviter que la fonction soit appelée pleins de fois à cause d'un temps très petit
@@ -313,6 +715,7 @@ class DataManagerCommands(commands.Cog):
 
         print("###END recall_event###")
 
+    # retourne le temps d'attente avant le prochain affichage le plus court
     def get_shortest_time(self, list_dict: list[dict], guild_id: int, maximum: int = 3600) -> float:
         current_time_float = time.time()
         time_before_last_call = self.database_handler.get_guild(guild_id)["timeBeforeLastCall"]
@@ -330,157 +733,7 @@ class DataManagerCommands(commands.Cog):
                 shortest_time = time_before_next_call
         return shortest_time
 
-    @commands.command()
-    async def getEvent(self, ctx):
-        guild = ctx.guild
-        guild_id = guild.id
-
-        event_db = self.database_handler.get_guild(guild_id)["event"]
-
-        if event_db != "" and event_db is not None:
-            event_list = self.functions.unpack_str_to_list_dict(event_db)
-        else:
-            await ctx.send("Il n'y a pas d'évenements sur ce serveur.")
-            return
-
-        for event_lib in event_list:
-            embed = self.embed_event(event_lib, title="GetEvent", description="", show_utc=True, show_id=True)
-            await ctx.send(embed=embed)
-
-    @commands.command()
-    async def delEvent(self, ctx, *, event_id):
-        guild = ctx.guild
-        guild_id = guild.id
-
-        try:
-            event_id = int(event_id)
-        except:
-            await ctx.send(f"Il faut l'identifiant d'un évenement, __'{event_id}'__ n'est pas un identifiant.")
-
-        event_db = self.database_handler.get_guild(guild_id)["event"]
-        event_unpack = self.functions.unpack_str_to_list_dict(event_db)
-
-        if len(event_unpack) == 0:
-            await ctx.send("Il n'y a pas d'évenements de prévus.")
-            return
-
-        event_to_destroy = None
-        for event in event_unpack:
-            if event["id"] == event_id:
-                event_to_destroy = event
-                break
-
-        if event_to_destroy is not None:
-            event_unpack.remove(event_to_destroy)
-        else:
-            await ctx.send(f"L'évenement avec l'id __'{event_id}'__ n'a pas été trouvé.")
-            return
-
-        event_str = self.functions.pack_list_dict_to_str(event_unpack)
-        self.database_handler.set_event(guild_id, event_str)
-
-        await ctx.send("Evenement supprimé.")
-
-    @commands.command()
-    async def setTimeBeforeCall(self, ctx, seconds):
-        guild = ctx.guild
-        guild_id = guild.id
-
-        value = self.functions.reformat_type(seconds)
-        if not isinstance(value, int):
-            await ctx.send(f"Il faut un nombre, **{seconds}** n'est pas un nombre.")
-            return
-
-        if value < 900:
-            await ctx.send("La valeur minimale est de **900** secondes, ce qui fait 15 minutes")
-            value = 900
-
-        self.database_handler.set_time_before_call(guild_id, value)
-        self.recall_event.restart()
-        await ctx.send("Temps d'envoit avant la date de l'évenement mis à jour.")
-
-    @commands.command()
-    async def setChannelEvent(self, ctx):
-        guild = ctx.guild
-        guild_id = guild.id
-
-        channel_mentions = ctx.message.channel_mentions
-        if len(channel_mentions) == 0:
-            await ctx.send("Vous avez oublié la mention du salon textuel.")
-            return
-        elif len(channel_mentions) > 1:
-            await ctx.send("Il ne faut qu'une seule mention de salon textuel.")
-
-        channel_id = channel_mentions[0].id
-        self.database_handler.set_event_channel(guild_id, channel_id)
-
-        await ctx.send("Salon évenement mis à jour.")
-
-    @commands.command()
-    async def setRoleEvent(self, ctx, arg):
-        guild = ctx.guild
-        guild_id = guild.id
-
-        roles = ctx.message.role_mentions
-
-        print(arg)
-        if arg in self.functions.list_true:
-            arg = True
-        elif arg in self.functions.list_false:
-            arg = False
-        else:
-            await ctx.send("Je n'ai pas bien compris ce que vous voulez faire. Essayez avec **oui** ou **non**")
-            return
-
-        if len(roles) == 0:
-            await ctx.send("Vous avez oublié la mention du ou des rôles.")
-            return
-
-        for role in roles:
-            role_id = role.id
-            self.database_handler.set_role_is_event(role_id, guild_id, arg)
-
-        await ctx.send("Rôle évent mis à jour.")
-
-    @commands.command()
-    async def setAdCount(self, ctx, value):
-        guild = ctx.guild
-        guild_id = guild.id
-
-        roles = ctx.message.role_mentions
-
-        value = self.functions.reformat_type(value)
-
-        if not isinstance(value, int):
-            await ctx.send(f"La valeur '{value}' que vous avez renseigné n'est pas un nombre entier.")
-
-        if len(roles) == 0:
-            await ctx.send("Vous avez oublié la mention du ou des rôles.")
-            return
-
-        for role in roles:
-            role_id = role.id
-            self.database_handler.set_role_ad_value(role_id, guild_id, value)
-
-        await ctx.send("Nombre d'annonces des rôles mis à jour.")
-
-    @commands.command()
-    async def setAdChannel(self, ctx):
-        guild = ctx.guild
-        guild_id = guild.id
-
-        channel_mentions = ctx.message.channel_mentions
-        if len(channel_mentions) == 0:
-            await ctx.send("Vous avez oublié la mention du salon textuel.")
-            return
-        elif len(channel_mentions) > 1:
-            await ctx.send("Il ne faut qu'une seule mention de salon textuel.")
-
-        channel_id = channel_mentions[0].id
-        self.database_handler.set_ad_channel(guild_id, channel_id)
-
-        await ctx.send("Salon annonces mis à jour.")
-
+    # permet de connaître le temps qui sépare le membre du temps UTC
     @commands.command()
     async def getTime(self, ctx):
         current_time = time.time()
@@ -525,108 +778,8 @@ class DataManagerCommands(commands.Cog):
                        f"Ce qui est utile à savoir puisque pour créer un évenement il faut rentrer la date en heure "
                        f"utc et pas en heure locale.")
 
-    @commands.command()
-    async def getAllChoice(self, ctx):
-        guild = ctx.guild
-        guild_id = guild.id
-
-        user = ctx.author
-        channel = await user.create_dm()
-        users = self.database_handler.get_all_users(guild_id)
-
-        say = f"__Choix du serveur **{guild.name}**__\n"
-        for user in users:
-            username = user["username"]
-            count = len(username)
-            space = 20 - count
-            choice = user["choice"]
-            if choice is None:
-                choice = ""
-            say += f"``{username}{' ' * space}`` : {choice}\n"
-        await channel.send(say)
-
-    @commands.command()
-    async def getAllAvailability(self, ctx):
-        guild = ctx.guild
-        guild_id = guild.id
-
-        user = ctx.author
-        channel = await user.create_dm()
-        users = self.database_handler.get_all_users(guild_id)
-
-        say = f"__Disponibilités du serveur **{guild.name}**__\n"
-        for user in users:
-            username = user["username"]
-            count = len(username)
-            space = 20 - count
-            choice = user["availability"]
-            if choice is None:
-                choice = ""
-            say += f"``{username}{' ' * space}`` : {choice}\n"
-        await channel.send(say)
-
-    @commands.command()
-    async def getAllSpeciality(self, ctx):
-        guild = ctx.guild
-        guild_id = guild.id
-
-        member = ctx.author
-        channel = await member.create_dm()
-
-        members_db = self.database_handler.get_all_users(guild_id)
-
-        dictionary = {
-            "cac": [],
-            "vel": [],
-            "tir": [],
-            None: []
-        }
-        for member_db in members_db:
-            member_id = member_db["userId"]
-            spe = member_db["speciality"]
-
-            member_guild = guild.get_member(member_id)
-            dictionary[spe].append(member_guild)
-
-        await channel.send(f"__Spécialités du serveur **{guild.name}**__\n")
-        for key in dictionary.keys():
-            name = key
-            if name == "cac":
-                name = "corps à corps"
-            elif name == "vel":
-                name = "véloces"
-            elif name == "tir":
-                name = "tireuses"
-            else:
-                name = "pas précisée"
-
-            say = f"Nombre de spécialité **{name}** : __{len(dictionary[key])}__\n"
-            for member_dict in dictionary[key]:
-                say += f"``{member_dict.name}``\n"
-            await channel.send(say)
-
-    @commands.command()
-    async def reset(self, ctx, arg):
-        guild = ctx.guild
-        guild_id = guild.id
-
-        if arg not in ["availability", "choice"]:
-            await ctx.send("Il faut choisir entre **availability** et **choice**")
-            return
-
-        for user in guild.members:
-            user_id = user.id
-
-            if arg == "availability":
-                if self.database_handler.user_exists_with(user_id, guild_id):
-                    self.database_handler.set_availability(user_id, guild_id)
-            elif arg == "choice":
-                if self.database_handler.user_exists_with(user_id, guild_id):
-                    self.database_handler.set_choice(user_id, guild_id)
-
-        await ctx.send("Réinitialisation effectuée.")
-
-    def embed_event(self, event: dict, title: str ="Evenement", description: str ="Un évenement va bientôt commencer !",
+    # retourne un embed depuis un dictionnaire Event
+    def embed_event(self, event: dict, title: str = "Evenement", description: str = "Un évenement va bientôt commencer !",
                     show_utc: bool = False, show_id: bool = False) -> discord.Embed:
         date = event["date"]
         dlu = None

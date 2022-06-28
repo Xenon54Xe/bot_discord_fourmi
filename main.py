@@ -5,18 +5,23 @@ import random
 import asyncio
 
 from BDD.database_handler import DatabaseHandler
-from bot_discord_fourmi import functions as fc
+from bot_discord_fourmi.functions import Function
 
 database_handler = DatabaseHandler("database.db")
-functions = fc.Function()
+functions = Function()
 
+"""
+Création du bot
+"""
 intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix="-", description="Alpha- du bot :)", intents=intents)
 bot.remove_command('help')
 
+# dictionnaire qui contient toutes les aides
 help_commands = {}
 
+# affiché dans la description du bot
 fun_fact = [
     "J'ai ai été créé en 2022",
     "Je suis spécialisé dans les fourmis",
@@ -28,6 +33,12 @@ fun_fact = [
 ]
 
 
+"""
+Vérifications
+"""
+
+
+# vérifie que la commande effectuée soit dans le bon salon
 def cmd_in_good_channel(ctx) -> bool:
     channel = ctx.channel
     if isinstance(channel, discord.DMChannel):
@@ -50,117 +61,14 @@ def cmd_in_good_channel(ctx) -> bool:
         return False
 
 
+# ajout de la vérification pour toutes les commandes du bot
 bot.add_check(cmd_in_good_channel)
 
 
+# vérifie si la commande est faite par le propriétaire du bot
 def is_bot_owner(ctx):
     user_id = ctx.author.id
     return user_id == 753240790779691109
-
-
-@bot.command()
-@commands.check(is_bot_owner)
-async def load(ctx, name=None):
-    if name:
-        try:
-            bot.load_extension(f"cogs.{name}")
-        except:
-            print(f"Erreur: Problème dans le chargement de: '{name}'")
-            return
-    await ctx.send(f"Extension chargée")
-
-
-@bot.command()
-@commands.check(is_bot_owner)
-async def unload(ctx, name=None):
-    if name:
-        try:
-            bot.unload_extension(f"cogs.{name}")
-        except():
-            print(f"Erreur: Problème dans le déchargement de: '{name}'")
-            return
-    await ctx.send("Extension déchargée")
-
-
-@bot.command()
-@commands.check(is_bot_owner)
-async def reload(ctx, name=None):
-    if name in functions.list_all:
-        load_all_cogs()
-    elif name:
-        try:
-            bot.reload_extension(f"cogs.{name}")
-        except:
-            try:
-                bot.load_extension(f"cogs.{name}")
-            except:
-                await ctx.send("Je n'ai pas compris ce que vous voulez dire.")
-                return
-    await ctx.send("Extension rechargée")
-
-
-@bot.command()
-@commands.check(is_bot_owner)
-async def reloadHC(ctx):
-    reload_help_command()
-    await ctx.send("Help_command rechargé.")
-
-
-@bot.command()
-@commands.check(is_bot_owner)
-async def addHelp(ctx):
-    p = os.path.abspath("help_command")
-    with open(p, "r", encoding="UTF-8") as file:
-        text = file.readlines()[0]
-        current_dict = functions.str_to_dict(text)
-        file.close()
-
-    content: str = ctx.message.content
-    name = functions.take_parts(content, " ", take_first=True)[0]
-    print(name)
-    value = content.replace(f"-addHelp {name} ", "")
-    print(value)
-
-    if name == "" or value == "":
-        await ctx.send("Vous avez oublié le nom de la commande ou l'aide.")
-        return
-
-    find = False
-    cmds = bot.commands
-    for cmd in cmds:
-        if cmd.name == name:
-            find = True
-            break
-
-    cogs = list(bot.cogs)
-    cogs.append("DefaultCommands")
-    if not find:
-        for cog in cogs:
-            if cog == name:
-                find = True
-                break
-
-    if not find:
-        await ctx.send(f"La commande '{name}' n'a pas été trouvée.")
-        return
-
-    current_dict[name] = value
-    string = functions.dict_to_str(current_dict)
-
-    with open(p, "w", encoding="UTF-8") as file:
-        file.write(string)
-        file.close()
-
-    await ctx.send(f"Aide pour la commande __'{name}'__ mise à jour.")
-
-
-def reload_help_command():
-    p = os.path.abspath("help_command")
-    global help_commands
-    with open(p, "r", encoding="UTF-8") as file:
-        text = file.readlines()[0]
-        help_commands = functions.str_to_dict(text)
-        file.close()
 
 
 @bot.command()
@@ -262,6 +170,140 @@ async def getSuggestion(ctx):
 
 
 @bot.command()
+@commands.check(is_bot_owner)
+async def load(ctx, name=None):
+    if name in functions.list_all:
+        load_all_cogs()
+    else:
+        try:
+            bot.load_extension(f"cogs.{name}")
+        except:
+            print(f"Erreur: Problème dans le chargement de: '{name}'")
+            return
+    await ctx.send(f"Extension chargée")
+
+
+@bot.command()
+@commands.check(is_bot_owner)
+async def unload(ctx, name=None):
+    if name in functions.list_all:
+        unload_all_cogs()
+    else:
+        try:
+            bot.unload_extension(f"cogs.{name}")
+        except():
+            print(f"Erreur: Problème dans le déchargement de: '{name}'")
+            return
+    await ctx.send("Extension déchargée")
+
+
+@bot.command()
+@commands.check(is_bot_owner)
+async def reload(ctx, name=None):
+    if name in functions.list_all:
+        load_all_cogs()
+    else:
+        try:
+            bot.reload_extension(f"cogs.{name}")
+        except:
+            try:
+                bot.load_extension(f"cogs.{name}")
+            except:
+                await ctx.send("Je n'ai pas compris quel extension je dois charger.")
+                return
+    await ctx.send("Extension rechargée")
+
+
+# charge toutes les extensions
+def load_all_cogs():
+    cogs = os.listdir("cogs")
+    for cog_name in cogs:
+        if cog_name.endswith(".py") and cog_name != "__init__.py":
+            try:
+                bot.load_extension(f"cogs.{cog_name[:-3]}")
+            except:
+                bot.reload_extension(f"cogs.{cog_name[:-3]}")
+    print("Cogs loaded")
+
+
+# décharge toutes les extensions
+def unload_all_cogs():
+    cogs = os.listdir("cogs")
+    for cog_name in cogs:
+        if cog_name.endswith(".py") and cog_name != "__init__.py":
+            try:
+                bot.unload_extension(f"cogs.{cog_name[:-3]}")
+            except:
+                print(f"Erreur: Problème dans le déchargement de '{cog_name}'")
+    print("Cogs loaded")
+
+
+@bot.command()
+@commands.check(is_bot_owner)
+async def addHelp(ctx):
+    p = os.path.abspath("help_command")
+    with open(p, "r", encoding="UTF-8") as file:
+        text = file.readlines()[0]
+        current_dict = functions.str_to_dict(text)
+        file.close()
+
+    content: str = ctx.message.content
+    name = functions.take_parts(content, " ", take_first=True)[0]
+    value = content.replace(f'-addHelp {name} ', "")
+
+    if name == "" or value == "":
+        await ctx.send("Vous avez oublié le nom de la commande ou l'aide.")
+        return
+
+    find = False
+    cmds = bot.commands
+    for cmd in cmds:
+        if cmd.name == name:
+            find = True
+            break
+
+    cogs = list(bot.cogs)
+    cogs.append("DefaultCommands")
+    if not find:
+        for cog in cogs:
+            if cog == name:
+                find = True
+                break
+
+    if not find:
+        await ctx.send(f"La commande '{name}' n'a pas été trouvée.")
+        return
+
+    current_dict[name] = value
+    string = functions.dict_to_str(current_dict)
+
+    print(current_dict)
+
+    with open(p, "w", encoding="UTF-8") as file:
+        file.write(string)
+        file.close()
+
+    await ctx.send(f"Aide pour la commande __'{name}'__ mise à jour.")
+
+
+@bot.command()
+@commands.check(is_bot_owner)
+async def reloadHC(ctx):
+    reload_help_command()
+    await ctx.send("Help_command rechargé.")
+
+
+
+def reload_help_command():
+    p = os.path.abspath("help_command")
+    global help_commands
+    with open(p, "r", encoding="UTF-8") as file:
+        text = file.readlines()[0]
+        help_commands = functions.str_to_dict(text)
+        file.close()
+
+
+@bot.command()
 async def help(ctx, arg=None):
     if arg is not None:
         arg = functions.reformat_type(arg)
@@ -290,43 +332,58 @@ async def help(ctx, arg=None):
             bot_dict[default_commands].append(cmd.name)
 
     order_dict = {
-        "DefaultCommands": [('load', ''),
-                            ('unload', ''),
-                            ('reload', ''),
-                            ('reloadHC', ''),
-                            ('getSuggestion', ''),
-                            ('help', 'Aide'),
-                            ('addHelp', '')],
+        "DefaultCommands": [
+            ('load', ''),
+            ('unload', ''),
+            ('reload', ''),
+            ('reloadHC', ''),
+            ('getSuggestion', ''),
+            ('help', 'Aide'),
+            ('addHelp', '')
+        ],
 
-        "MemberCommands": [('suggest', 'suggestion pour le bot'),
-                           ('setChoice', 'définir vos choix'),
-                           ('setAvailability', 'définir vos disponibilités'),
-                           ('setSpeciality', 'définir vos spécialités'),
-                           ('setAd', 'créer une annonce'),
-                           ('getAd', 'donne vos annonces'),
-                           ('delAd', 'supprimer une annonce'),
-                           ('getRoleMovable', 'donne les rôles attribuables'),
-                           ('addRole', 'vous donne un rôle'),
-                           ('removeRole', 'vous enlève un rôle')],
+        "MemberCommands": [
+            ('suggest', 'suggestion pour le bot'),
+            ('setChoice', 'définir vos choix'),
+            ('setAvailability', 'définir vos disponibilités'),
+            ('setSpeciality', 'définir vos spécialités'),
+            ('setAd', 'créer une annonce'),
+            ('getAd', 'donne vos annonces'),
+            ('delAd', 'supprimer une annonce'),
+            ('getRoleMovable', 'donne les rôles attribuables'),
+            ('addRole', 'vous donne un rôle'),
+            ('removeRole', 'vous enlève un rôle')
+        ],
 
-        "DataManagerCommands": [('setEvent', 'créer un évenement'),
-                                ('getEvent', 'donne les évenements'),
-                                ('delEvent', 'supprime un évenement'),
-                                ('setChannelEvent', 'définir le salon des évenements'),
-                                ('setRoleEvent', 'définir quel rôle est mentionné'),
-                                ('setTimeBeforeCall', "définit quand est envoyé l'évenements"),
-                                ('getTime', 'donne votre décalage avec le temps utc'),
-                                ('setAdValue', "définir le nombre d'annonces qu'un rôle peut envoyer"),
-                                ('setAdChannel', 'définir le salon des annonces'),
-                                ('getAllChoice', 'donne tous les choix des joueurs'),
-                                ('getAllAvailability', 'donne toutes les disponibilités'),
-                                ('getAllSpeciality', 'donne toutes les spécialités'),
-                                ('reset', 'réinitialise les choix et les disponibilités')],
+        "DataManagerCommands": [
+            ('addUser', 'ajoute un membre virtuel'),
+            ('getUsername', 'donne le nom de tous les membres'),
+            ('removeUser', 'supprime un membre virtuel'),
+            ('setOtherData', "définir les données d'un autre membre"),
+            ('setAdCount', "définir le nombre d'annonces qu'un rôle peut envoyer"),
+            ('setAdChannel', 'définir le salon des annonces'),
+            ('getAllChoice', 'donne tous les choix des joueurs'),
+            ('getAllAvailability', 'donne toutes les disponibilités'),
+            ('getAllSpeciality', 'donne toutes les spécialités'),
+            ('reset', 'réinitialise les choix et les disponibilités')
+        ],
 
-        "AdminCommands": [('setRoleManager', 'définir le rôle data manager'),
-                          ('getRoleManager', 'donne le rôle data manager'),
-                          ('setCMDChannel', 'définir le salon des commandes'),
-                          ('setRoleMovable', 'définir les rôles movable')],
+        "EventCommands": [
+            ('setEvent', 'créer un évenement'),
+            ('getEvent', 'donne les évenements'),
+            ('delEvent', 'supprime un évenement'),
+            ('setRoleEvent', 'définir quel rôle est mentionné'),
+            ('setChannelEvent', 'définir le salon des évenements'),
+            ('setTimeBeforeCall', "définit quand est envoyé l'évenements"),
+            ('getTime', 'donne votre décalage avec le temps utc'),
+        ],
+
+        "AdminCommands": [
+            ('setRoleManager', 'définir le rôle data manager'),
+            ('getRoleManager', 'donne le rôle data manager'),
+            ('setCMDChannel', 'définir le salon des commandes'),
+            ('setRoleMovable', 'définir les rôles movable')
+        ],
     }
 
     if isinstance(arg, int):
@@ -382,9 +439,9 @@ async def help(ctx, arg=None):
         for i in range(len(pages)):
             try:
                 x = help_commands[pages[i]]
-                value += f"{i + 1} : {pages[i]}\n"
+                value += f"``{i + 1} : {pages[i]}``\n"
             except:
-                value += f"{i + 1} : {pages[i]} __/!\\ __\n"
+                value += f"``{i + 1} : {pages[i]}`` __/!\\ __\n"
         value += "__Pour cela faite -help <numéro de la page>__"
         embed.add_field(name=f"Vous pouvez choisir entre {len(pages)} pages d'aide.",
                         value=value)
@@ -392,30 +449,21 @@ async def help(ctx, arg=None):
         await ctx.send(embed=embed)
 
 
-def load_all_cogs():
-    cogs = os.listdir("cogs")
-    for cog_name in cogs:
-        if cog_name.endswith(".py") and cog_name != "__init__.py":
-            try:
-                bot.load_extension(f"cogs.{cog_name[:-3]}")
-            except:
-                bot.reload_extension(f"cogs.{cog_name[:-3]}")
-    print("Cogs loaded")
-
-
+# quand le bot est lancé
 @bot.event
 async def on_ready():
     change_status.start()
     guilds = bot.guilds
     for guild in guilds:
-        functions.update_roles(guild)
         functions.update_guild(guild)
         functions.update_members(guild)
+        functions.update_roles(guild)
     load_all_cogs()
     reload_help_command()
     print("Ready")
 
 
+# boucle qui change le statut du bot toutes les 5 min
 @tasks.loop(minutes=5)
 async def change_status():
     choice = random.choice(fun_fact)
@@ -423,15 +471,17 @@ async def change_status():
     await bot.change_presence(status=discord.Status.dnd, activity=game)
 
 
-@reloadHC.error
+# les erreures des commandes reload, load, unload, reloadHC se retrouvent ici
 @load.error
 @unload.error
 @reload.error
+@reloadHC.error
 async def loading_error(ctx, error):
     if isinstance(error, commands.CheckFailure):
         await ctx.send("Vous ne pouvez pas utiliser la commande de l'être sûprème !")
 
 
+# les erreures de toutes les commandes du bot se retrouvent ici
 @bot.event
 async def on_command_error(ctx, error):
     guild = ctx.guild
@@ -453,7 +503,12 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("Vous avez oublié l'argument.")
     else:
-        print(type(error), error)
+        raise error
 
-token = "OTgyNzIyODMzNTE4MDYzNjM2.GlIOv4.rIgNoK3IL_5TiGNW8tYgarhLxnzpdNvCDXgHng"
-bot.run(token)
+# démarrage du bot
+token = "OTgyNzIyODMzNTE4MDYzNjM2.GgNPoh.QBUzkETAsfqLhkoqVIHT-Kc2YCID8huAiD4uiA"
+try:
+    bot.run(token)
+except Exception as exc:
+    print("Pas de co ?")
+    raise exc
