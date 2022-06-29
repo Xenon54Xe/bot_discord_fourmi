@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 
 from bot_discord_fourmi.BDD.database_handler import DatabaseHandler
+from bot_discord_fourmi.functions import Function
 
 
 def setup(bot):
@@ -13,6 +14,7 @@ class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.database_handler = DatabaseHandler("database.db")
+        self.functions = Function()
 
     # ajoute le serveur rejoint dans la BDD
     @commands.Cog.listener()
@@ -24,6 +26,10 @@ class Events(commands.Cog):
             self.database_handler.update_guild(guild_id, guild_name)
         else:
             self.database_handler.add_guild(guild_id, guild_name)
+
+        channel = guild.text_channels[0]
+        embed = self.functions.get_prerequis_embed()
+        await channel.send(embed=embed)
 
     # met à jour le serveur dans la BDD
     @commands.Cog.listener()
