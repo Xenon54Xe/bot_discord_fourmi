@@ -42,14 +42,14 @@ class DatabaseHandler:
         self.con.commit()
 
     # retourne tous les utilisateurs ayant la même guild_id
-    def get_all_users(self, guild_id: int) -> map:
+    def get_all_users(self, guild_id: int) -> list:
         cursor = self.con.cursor()
         query = f"SELECT * FROM User WHERE guildId = ?;"
         cursor.execute(query, (guild_id,))
         result = cursor.fetchall()
         cursor.close()
 
-        return map(dict, result)
+        return list(map(dict, result))
 
     # retourne les infos d'un utilisateur
     def get_user(self, user_id: int = None, guild_id: int = None, bdd_id: int = None) -> dict:
@@ -167,14 +167,14 @@ class DatabaseHandler:
         self.con.commit()
 
     # donne tous les rôles ayant la même guild_id
-    def get_all_roles(self, guild_id: int) -> map:
+    def get_all_roles(self, guild_id: int) -> list:
         cursor = self.con.cursor()
         query = f"SELECT * FROM Role WHERE guildId = ?;"
         cursor.execute(query, (guild_id,))
         result = cursor.fetchall()
         cursor.close()
 
-        return map(dict, result)
+        return list(map(dict, result))
 
     # retourne les infos d'un rôle
     def get_role(self, role_id: int, guild_id: int) -> dict:
@@ -264,14 +264,14 @@ class DatabaseHandler:
         self.con.commit()
 
     # retourne tous les serveurs de la BDD
-    def get_all_guilds(self) -> map:
+    def get_all_guilds(self) -> list:
         cursor = self.con.cursor()
         query = f"SELECT * FROM Guild;"
         cursor.execute(query)
         result = cursor.fetchall()
         cursor.close()
 
-        return map(dict, result)
+        return list(map(dict, result))
 
     # retourne les infos d'un serveur
     def get_guild(self, guild_id: int) -> dict:

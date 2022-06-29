@@ -27,6 +27,7 @@ class Function:
         self.user_data_percentage = ["army"] + self.user_speciality
         self.user_type = ["normal", "virtual"]
         self.warning = "__**/!\\ **__"
+        self.max_text_length = 80
 
     # retourne tout ce qui est entre les balises
     def take_parts(self, string: str, marker: str, take_first: bool = False) -> list[str]:
@@ -331,6 +332,29 @@ class Function:
             percent_list.append((x, y))
 
         return True, percent_list
+
+    def get_prerequis_embed(self) -> discord.Embed:
+        dictionary = {
+            "Salons": ["Un salon pour les **commandes**",
+                       "Un salon pour les **évenements**",
+                       "Un salon pour les **annonces**"],
+            "Rôles": [
+                "Un rôle **dataManager** qui permettra à des membres de s'occuper du bot sans avoir besoin d'être admin",
+                "Un rôle **event** qui sera mentionné lorsqu'un évenement est affiché"]
+        }
+
+        embed = discord.Embed(title="Prérequis",
+                              description="Une liste de tout ce qu'il faut pour que le bot fonctionne correctement")
+
+        for key in dictionary.keys():
+            values = dictionary[key]
+            text = ""
+            for value in values:
+                text += f"- {value}\n"
+            embed.add_field(name=key, value=text, inline=False)
+
+        embed.set_footer(text="Bonjour !")
+        return embed
 
     # met à jour les utilisateurs d'un serveur
     def update_members(self, guild: discord.Guild):

@@ -44,18 +44,30 @@ class DataManagerCommands(commands.Cog):
         guild = ctx.guild
         guild_id = guild.id
 
-        channel = await ctx.author.create_dm()
+        member = ctx.author
+
+        channel = await member.create_dm()
 
         users = self.database_handler.get_all_users(guild_id)
 
-        say = f"List des noms des utilisateurs :\n"
-        say += "__**/!\\ **__ = Utilisateur virtuel\n"
-        for user in users:
-            say += f"``{user['username']}``\n"
-            if user["userId"] == -1:
-                say = say[:-1]
-                say += "__**/!\\ **__"
-        await channel.send(say)
+        warning = self.functions.warning
+        first_msg = await channel.send(f"Pseudos du serveur **{guild.name}** {member.mention}\n"
+                                       f"{warning} = Utilisateur virtuel\n")
+        for nb_users in range(len(users)):
+            say = ""
+            for ten_user in range(10):
+                try:
+                    user = users[nb_users * 10 + ten_user]
+                except:
+                    break
+                if user["userId"] == -1:
+                    say += f"``{user['username']} /!\\`` "
+                else:
+                    say += f"``{user['username']}`` "
+            if say != "":
+                await channel.send(say)
+            else:
+                break
 
     # supprime un utilisateur virtuel
     @commands.command()
@@ -65,7 +77,7 @@ class DataManagerCommands(commands.Cog):
 
         users = self.functions.find_users_with_name(guild_id, name)
         if len(users) == 0:
-            await ctx.send(f"Le membre ayant le nom '{name}' n'existe pas.")
+            await ctx.send(f"Le membre ayant le nom __'{name}'__ n'existe pas.")
             return
         elif len(users) > 1:
             await ctx.send(f"Il y a {len(users)} membres ayant le nom __'{name}'__. Seuls les membres "
@@ -91,6 +103,10 @@ class DataManagerCommands(commands.Cog):
             await ctx.send(f"Vous devez renseigner le type de donnée que vous voulez modifier :\n"
                            f"``{self.functions.user_data_name}``")
             return
+        elif data_name in ["choice", "availability"]:
+            if len(arg) > self.functions.max_text_length:
+                await ctx.send(f"Vous ne devez pas dépasser **{self.functions.max_text_length}** caractères.")
+                return
 
         if type_of_user not in self.functions.user_type:
             await ctx.send(f"Vous devez renseigner le type d'utilisateur :\n"
@@ -222,20 +238,33 @@ class DataManagerCommands(commands.Cog):
         users = self.database_handler.get_all_users(guild_id)
 
         warning = self.functions.warning
-        say = f"__Choix du serveur **{guild.name}**__\n"
-        say += f"{warning} = Utilisateur virtuel\n"
-        for user in users:
-            username = user["username"]
-            count = len(username)
-            space = 20 - count
-            choice = user["choice"]
-            if choice is None:
-                choice = ""
-            say += f"``{username}{' ' * space}`` : {choice}\n"
-            if user["userId"] == -1:
-                say = say[:-1]
-                say += f"{warning}\n"
-        await channel.send(say)
+        first_msg = await channel.send(f"__Choix du serveur **{guild.name}**__\n"
+                                       f"{warning} = Utilisateur virtuel\n")
+        for nb_users in range(len(users)):
+            say = ""
+            for ten_user in range(10):
+                try:
+                    user = users[nb_users * 10 + ten_user]
+                except:
+                    break
+                username = user["username"]
+                count = len(username)
+                space = 20 - count
+                if count < 0:
+                    count = 0
+                choice = user["choice"]
+                if choice is None:
+                    choice = ""
+                say += f"``{username}{' ' * space}`` : {choice}\n"
+                if user["userId"] == -1:
+                    say = say[:-1]
+                    say += f"{warning}\n"
+            if say != "":
+                await channel.send(say)
+            else:
+                break
+
+        await first_msg.reply("Le début est là-haut.")
 
     # donne les disponibilités de tous les membres
     @commands.command()
@@ -248,20 +277,33 @@ class DataManagerCommands(commands.Cog):
         users = self.database_handler.get_all_users(guild_id)
 
         warning = self.functions.warning
-        say = f"__Disponibilités du serveur **{guild.name}**__\n"
-        say += f"{warning} = Utilisateur virtuel\n"
-        for user in users:
-            username = user["username"]
-            count = len(username)
-            space = 20 - count
-            choice = user["availability"]
-            if choice is None:
-                choice = ""
-            say += f"``{username}{' ' * space}`` : {choice}\n"
-            if user["userId"] == -1:
-                say = say[:-1]
-                say += f"{warning}\n"
-        await channel.send(say)
+        first_msg = await channel.send(f"__Disponibilités du serveur **{guild.name}**__\n"
+                                       f"{warning} = Utilisateur virtuel\n")
+        for nb_users in range(len(users)):
+            say = ""
+            for ten_users in range(10):
+                try:
+                    user = users[nb_users * 10 + ten_users]
+                except:
+                    break
+                username = user["username"]
+                count = len(username)
+                space = 20 - count
+                if count < 0:
+                    count = 0
+                choice = user["availability"]
+                if choice is None:
+                    choice = ""
+                say += f"``{username}{' ' * space}`` : {choice}\n"
+                if user["userId"] == -1:
+                    say = say[:-1]
+                    say += f"{warning}\n"
+            if say != "":
+                await channel.send(say)
+            else:
+                break
+
+        await first_msg.reply("Le début est là-haut.")
 
     # donne les spécialités de tous les membres
     @commands.command()
@@ -285,8 +327,8 @@ class DataManagerCommands(commands.Cog):
             dictionary[spe].append(member_db)
 
         warning = self.functions.warning
-        await channel.send(f"__Spécialités du serveur **{guild.name}**__\n"
-                           f"{warning} = Utilisateur virtuel\n")
+        first_msg = await channel.send(f"__Spécialités du serveur **{guild.name}**__ {member.mention}\n"
+                                       f"{warning} = Utilisateur virtuel\n")
         for key in dictionary.keys():
             name = key
             if name == "cac":
@@ -306,6 +348,8 @@ class DataManagerCommands(commands.Cog):
                     say += f"{warning}\n"
             await channel.send(say)
 
+        await first_msg.reply(f'Le début est la haut.')
+
     # donne les pourcentages de tous les membres
     @commands.command()
     async def getAllPercentage(self, ctx):
@@ -317,8 +361,8 @@ class DataManagerCommands(commands.Cog):
         users = self.database_handler.get_all_users(guild_id)
 
         warning = self.functions.warning
-        await channel.send(f"__Pourcentages du serveur **{guild.name}**__\n"
-                       f"{warning} = Utilisateur virtuel\n")
+        first_msg = await channel.send(f"__Pourcentages du serveur **{guild.name}**__ {user.mention}\n"
+                                       f"{warning} = Utilisateur virtuel\n")
         for user in users:
             if user["userId"] == -1:
                 username = f"**{user['username']}** {warning}"
@@ -327,9 +371,13 @@ class DataManagerCommands(commands.Cog):
             percentage_db = user["percentage"]
             percentage_unpack = self.functions.unpack_str_to_dict_list(percentage_db)
 
+            keys = percentage_unpack.keys()
+            if len(keys) == 0:
+                continue
+
             embed = discord.Embed(title=username, description="Vous avez demandé les pourcentages ?")
 
-            for key in percentage_unpack.keys():
+            for key in keys:
                 value = percentage_unpack[key]
                 attack = value[0]
                 defense = value[1]
@@ -346,10 +394,10 @@ class DataManagerCommands(commands.Cog):
 
                 embed.add_field(name=name, value=f"``Attaque``: **{attack}**\n``Défense``: **{defense}**\n``Vie    ``: **{life}**")
 
-            if len(percentage_unpack.keys()) == 0:
-                embed.set_footer(text="Il semblerait que ce membre n'a pas rempli ses pourcentages...")
-
             await channel.send(embed=embed)
+
+        await channel.send("__Si il manque des membres c'est qu'ils n'ont pas rempli leurs pourcentages__.")
+        await first_msg.reply(f'Le début est là-haut.')
 
     # réinitialise les données de tous les membres
     @commands.command()

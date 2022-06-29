@@ -344,6 +344,7 @@ async def help(ctx, arg=None):
             ('reloadHC', ''),
             ('getSuggestion', ''),
             ('help', 'Aide'),
+            ('prerequis', 'donne les prérequis du bot'),
             ('addHelp', '')
         ],
 
@@ -456,6 +457,13 @@ async def help(ctx, arg=None):
         await ctx.send(embed=embed)
 
 
+# commande qui dit ce qu'il faut pour le bot
+@bot.command()
+async def prerequis(ctx):
+    embed = functions.get_prerequis_embed()
+    await ctx.send(embed=embed)
+
+
 # quand le bot est lancé
 @bot.event
 async def on_ready():
@@ -517,5 +525,4 @@ token = "OTgyNzIyODMzNTE4MDYzNjM2.GcrzIv.5g2_34neFaLZnwsj7alSECWYgeigkyWO5qUEow"
 try:
     bot.run(token)
 except Exception as exc:
-    print("Pas de co ?")
-    raise exc
+    raise Exception(exc.args, "Pas de co ?, Mauvais token ?")

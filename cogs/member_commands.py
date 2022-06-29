@@ -39,6 +39,9 @@ class MemberCommands(commands.Cog):
 
         if choice in self.functions.list_none:
             choice = None
+        elif len(choice) > self.functions.max_text_length:
+            await ctx.send(f"Vous ne devez pas dépasser **{self.functions.max_text_length}** caractères.")
+            return
 
         self.database_handler.set_choice(ctx.author.id, guild_id, choice)
 
@@ -52,6 +55,9 @@ class MemberCommands(commands.Cog):
 
         if arg in self.functions.list_none:
             arg = None
+        elif len(arg) > self.functions.max_text_length:
+            await ctx.send(f"Vous ne devez pas dépasser **{self.functions.max_text_length}** caractères.")
+            return
 
         self.database_handler.set_availability(ctx.author.id, guild_id, arg)
 
