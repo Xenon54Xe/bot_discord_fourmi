@@ -360,6 +360,8 @@ class DataManagerCommands(commands.Cog):
 
         await first_msg.reply(f'Le début est là-haut.')
 
+        await first_msg.reply(f'Le début est la haut.')
+
     # donne les pourcentages de tous les membres
     @commands.command()
     async def getAllPercentage(self, ctx):
