@@ -250,9 +250,7 @@ async def addHelp(ctx):
 
     content: str = ctx.message.content
     name = functions.take_parts(content, " ", take_first=True)[0]
-    print(name)
     value = content.replace(f'-addHelp {name} ', "")
-    print(value)
 
     if name == "" or value == "":
         await ctx.send("Vous avez oublié le nom de la commande ou l'aide.")
@@ -280,8 +278,6 @@ async def addHelp(ctx):
     current_dict[name] = value
     string = functions.dict_to_str(current_dict)
 
-    print(current_dict)
-
     with open(p, "w", encoding="UTF-8") as file:
         file.write(string)
         file.close()
@@ -293,17 +289,35 @@ async def addHelp(ctx):
 @bot.command()
 @commands.check(is_bot_owner)
 async def reloadHC(ctx):
-    reload_help_command()
+    clean_help_command()
     await ctx.send("Help_command rechargé.")
 
 
-# qui met à jour les aides
-def reload_help_command():
+def clean_help_command():
     p = os.path.abspath("help_command")
-    global help_commands
     with open(p, "r", encoding="UTF-8") as file:
         text = file.readlines()[0]
-        help_commands = functions.str_to_dict(text, auto_reformat=False)
+        last_help_command = functions.str_to_dict(text, auto_reformat=False)
+        file.close()
+
+    ctg = [key for key in bot.cogs.keys()]
+    ctg.append("DefaultCommands")
+    cmd = [i.name for i in bot.commands]
+    list_to_search = ctg + cmd
+
+    cleaned_help_command = {}
+    for key in last_help_command.keys():
+        if key in list_to_search:
+            value = last_help_command[key]
+            cleaned_help_command[key] = value
+
+    global help_commands
+    help_commands = cleaned_help_command
+
+    help_commands_str = functions.dict_to_str(cleaned_help_command)
+
+    with open(p, "w", encoding="UTF-8") as file:
+        file.write(help_commands_str)
         file.close()
 
 
@@ -367,7 +381,6 @@ async def help(ctx, arg=None):
             ('removeUser', 'supprime un membre virtuel'),
             ('setOtherData', "définir les données d'un autre membre"),
             ('setAdCount', "définir le nombre d'annonces qu'un rôle peut envoyer"),
-            ('setAdChannel', 'définir le salon des annonces'),
             ('getAllChoice', 'donne tous les choix des joueurs'),
             ('getAllAvailability', 'donne toutes les disponibilités'),
             ('getAllSpeciality', 'donne toutes les spécialités'),
@@ -380,16 +393,17 @@ async def help(ctx, arg=None):
             ('getEvent', 'donne les évenements'),
             ('delEvent', 'supprime un évenement'),
             ('setRoleEvent', 'définir quel rôle est mentionné'),
-            ('setChannelEvent', 'définir le salon des évenements'),
             ('setTimeBeforeCall', "définit quand est envoyé l'évenements"),
             ('getTime', 'donne votre décalage avec le temps utc'),
         ],
 
         "AdminCommands": [
-            ('prerequis', 'donne les prérequis du bot'),
+            ('prerequisite', 'donne les prérequis du bot'),
+            ('setChannelCMD', 'définir le salon des commandes'),
+            ('setChannelEvent', 'définir le salon des évenements'),
+            ('setChannelAd', 'définir le salon des annonces'),
             ('setRoleManager', 'définir le rôle data manager'),
             ('getRoleManager', 'donne le rôle data manager'),
-            ('setCMDChannel', 'définir le salon des commandes'),
             ('setRoleMovable', 'définir les rôles movable')
         ],
     }
@@ -430,10 +444,13 @@ async def help(ctx, arg=None):
             except:
                 value += f"``'{cmd[0]}'{' ' * nb_of_space}`` | **{cmd[1]}** __ /!\\ __\n"
         value = value[:-1]
-        if len(cmds) != len(bot_cmds):
-            name = f"**Commandes**: __ /!\\ __"
+
+        if len(cmds) > len(bot_cmds):
+            name = "**Commandes**: Il y a trop de commandes"
+        elif len(cmds) < len(bot_cmds):
+            name = "**Commandes**: Il manque des commandes"
         else:
-            name = "**Commandes:**"
+            name = "**Commandes**:"
         embed.add_field(name=name, value=value)
 
         await ctx.send(embed=embed)
@@ -467,7 +484,7 @@ async def on_ready():
         functions.update_members(guild)
         functions.update_roles(guild)
     load_all_cogs()
-    reload_help_command()
+    clean_help_command()
     print("Ready")
 
 
@@ -514,7 +531,7 @@ async def on_command_error(ctx, error):
         raise error
 
 # démarrage du bot
-token = "OTgyNzIyODMzNTE4MDYzNjM2.GbpZVj.VB33sQLudPsTmmHH1Tow_HoiUlIlZMkdsi5jBg"
+token = "OTgyNzIyODMzNTE4MDYzNjM2.GrnEJE.gEXEdHZ4HVlckzZJoxRKAjOUIjKO_I9QLoovz0"
 try:
     bot.run(token)
 except Exception as exc:

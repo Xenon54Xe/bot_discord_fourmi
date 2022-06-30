@@ -18,9 +18,62 @@ class AdminCommands(commands.Cog):
 
     # commande qui dit ce qu'il faut pour le bot
     @commands.command()
-    async def prerequis(self, ctx):
+    async def prerequisite(self, ctx):
         embed = self.functions.get_prerequis_embed()
         await ctx.send(embed=embed)
+
+    # définit le salon des commandes
+    @commands.command()
+    async def setChannelCMD(self, ctx, arg):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        channels = ctx.message.channel_mentions
+        if len(channels) > 1:
+            await ctx.send("Il ne peut y avoir qu'un salon pour les commandes du bot.")
+
+        if len(channels) == 0:
+            self.database_handler.set_cmd_channel(guild_id, None)
+            await ctx.send("Il n'y a plus de salon des commandes.")
+        else:
+            self.database_handler.set_cmd_channel(guild_id, channels[0].id)
+            await ctx.send("Salon des commandes mis à jour.")
+
+    # définit le salon où sont affichés les évenements
+    @commands.command()
+    async def setChannelEvent(self, ctx):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        channel_mentions = ctx.message.channel_mentions
+        if len(channel_mentions) == 0:
+            await ctx.send("Vous avez oublié la mention du salon textuel.")
+            return
+        elif len(channel_mentions) > 1:
+            await ctx.send("Il ne faut qu'une seule mention de salon textuel.")
+
+        channel_id = channel_mentions[0].id
+        self.database_handler.set_event_channel(guild_id, channel_id)
+
+        await ctx.send("Salon évenement mis à jour.")
+
+    # définit le salon des annnonces du serveur
+    @commands.command()
+    async def setChannelAd(self, ctx):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        channel_mentions = ctx.message.channel_mentions
+        if len(channel_mentions) == 0:
+            await ctx.send("Vous avez oublié la mention du salon textuel.")
+            return
+        elif len(channel_mentions) > 1:
+            await ctx.send("Il ne faut qu'une seule mention de salon textuel.")
+
+        channel_id = channel_mentions[0].id
+        self.database_handler.set_ad_channel(guild_id, channel_id)
+
+        await ctx.send("Salon annonces mis à jour.")
 
     # définit le rôle manager du serveur
     @commands.command()
@@ -93,23 +146,6 @@ class AdminCommands(commands.Cog):
             await ctx.send("Il n'y a pas de rôle dataManager")
         else:
             await ctx.send(f"Le rôle dataManager est **{data_role[0].name}**")
-
-    # définit le salon des commandes
-    @commands.command()
-    async def setCMDChannel(self, ctx, arg):
-        guild = ctx.guild
-        guild_id = guild.id
-
-        channels = ctx.message.channel_mentions
-        if len(channels) > 1:
-            await ctx.send("Il ne peut y avoir qu'un salon pour les commandes du bot.")
-
-        if len(channels) == 0:
-            self.database_handler.set_cmd_channel(guild_id, None)
-            await ctx.send("Il n'y a plus de salon des commandes.")
-        else:
-            self.database_handler.set_cmd_channel(guild_id, channels[0].id)
-            await ctx.send("Salon des commandes mis à jour.")
 
     # definit le(s) rôle(s) movable du serveur
     @commands.command()

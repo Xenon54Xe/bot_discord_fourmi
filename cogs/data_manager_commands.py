@@ -209,24 +209,6 @@ class DataManagerCommands(commands.Cog):
 
         await ctx.send("Nombre d'annonces des rôles mis à jour.")
 
-    # définit le salon des annnonces du serveur
-    @commands.command()
-    async def setAdChannel(self, ctx):
-        guild = ctx.guild
-        guild_id = guild.id
-
-        channel_mentions = ctx.message.channel_mentions
-        if len(channel_mentions) == 0:
-            await ctx.send("Vous avez oublié la mention du salon textuel.")
-            return
-        elif len(channel_mentions) > 1:
-            await ctx.send("Il ne faut qu'une seule mention de salon textuel.")
-
-        channel_id = channel_mentions[0].id
-        self.database_handler.set_ad_channel(guild_id, channel_id)
-
-        await ctx.send("Salon annonces mis à jour.")
-
     # donne les choix de tous les membres
     @commands.command()
     async def getAllChoice(self, ctx):
@@ -647,24 +629,6 @@ class EventCommands(commands.Cog):
             self.database_handler.set_role_is_event(role_id, guild_id, arg)
 
         await ctx.send("Rôle évent mis à jour.")
-
-    # définit le salon où sont affichés les évenements
-    @commands.command()
-    async def setChannelEvent(self, ctx):
-        guild = ctx.guild
-        guild_id = guild.id
-
-        channel_mentions = ctx.message.channel_mentions
-        if len(channel_mentions) == 0:
-            await ctx.send("Vous avez oublié la mention du salon textuel.")
-            return
-        elif len(channel_mentions) > 1:
-            await ctx.send("Il ne faut qu'une seule mention de salon textuel.")
-
-        channel_id = channel_mentions[0].id
-        self.database_handler.set_event_channel(guild_id, channel_id)
-
-        await ctx.send("Salon évenement mis à jour.")
 
     # définit le temps qui sépare le premier et le deuxième affichage dans le serveur
     @commands.command()
