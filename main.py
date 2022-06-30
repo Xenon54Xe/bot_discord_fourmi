@@ -15,7 +15,7 @@ Création du bot
 """
 intents = discord.Intents.default()
 intents.members = True
-bot = commands.Bot(command_prefix=">", description="Alpha- du bot :)", intents=intents)
+bot = commands.Bot(command_prefix="-", description="Alpha- du bot :)", intents=intents)
 bot.remove_command('help')
 
 # dictionnaire qui contient toutes les aides
@@ -408,6 +408,7 @@ async def help(ctx, arg=None):
         ],
     }
 
+    warning = functions.warning
     if isinstance(arg, int):
         keys = list(order_dict.keys())
         try:
@@ -435,14 +436,16 @@ async def help(ctx, arg=None):
         value = ""
         for cmd in cmds:
             count = len(cmd[0])
-            nb_of_space = 20 - count
+            nb_of_space = 10 - count
+            if nb_of_space < 0:
+                nb_of_space = 0
             if cmd[0] in hide_commands:
                 continue
             try:
                 x = help_commands[cmd[0]]
-                value += f"``'{cmd[0]}'{' ' * nb_of_space}`` | **{cmd[1]}**\n"
+                value += f"``'{cmd[0]}'{' ' * nb_of_space}`` |ㅤ**{cmd[1]}**\n"
             except:
-                value += f"``'{cmd[0]}'{' ' * nb_of_space}`` | **{cmd[1]}** __ /!\\ __\n"
+                value += f"``'{cmd[0]}'{' ' * nb_of_space}`` |ㅤ**{cmd[1]}** {warning}"
         value = value[:-1]
 
         if len(cmds) > len(bot_cmds):
@@ -466,7 +469,7 @@ async def help(ctx, arg=None):
                 x = help_commands[pages[i]]
                 value += f"``{i + 1} : {pages[i]}``\n"
             except:
-                value += f"``{i + 1} : {pages[i]}`` __/!\\ __\n"
+                value += f"``{i + 1} : {pages[i]}`` {warning}"
         value += "__Pour cela faite -help <numéro de la page>__"
         embed.add_field(name=f"Vous pouvez choisir entre {len(pages)} pages d'aide.",
                         value=value)
@@ -531,7 +534,7 @@ async def on_command_error(ctx, error):
         raise error
 
 # démarrage du bot
-token = "__token__"
+token = "OTgyNzIyODMzNTE4MDYzNjM2.GhuDVt.k_vFeUAcRWhk_yz5sFF6BLpqRHE4YcybC-0olA"
 try:
     bot.run(token)
 except Exception as exc:
