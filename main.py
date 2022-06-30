@@ -245,7 +245,7 @@ async def addHelp(ctx):
     p = os.path.abspath("help_command")
     with open(p, "r", encoding="UTF-8") as file:
         text = file.readlines()[0]
-        current_dict = functions.str_to_dict(text)
+        current_dict = functions.str_to_dict(text, auto_reformat=False)
         file.close()
 
     content: str = ctx.message.content
@@ -297,7 +297,9 @@ def clean_help_command():
     p = os.path.abspath("help_command")
     with open(p, "r", encoding="UTF-8") as file:
         text = file.readlines()[0]
+        print(text)
         last_help_command = functions.str_to_dict(text, auto_reformat=False)
+        print(last_help_command)
         file.close()
 
     ctg = [key for key in bot.cogs.keys()]
@@ -436,7 +438,7 @@ async def help(ctx, arg=None):
         value = ""
         for cmd in cmds:
             count = len(cmd[0])
-            nb_of_space = 10 - count
+            nb_of_space = 20 - count
             if nb_of_space < 0:
                 nb_of_space = 0
             if cmd[0] in hide_commands:
@@ -534,7 +536,7 @@ async def on_command_error(ctx, error):
         raise error
 
 # démarrage du bot
-token = "OTgyNzIyODMzNTE4MDYzNjM2.GhuDVt.k_vFeUAcRWhk_yz5sFF6BLpqRHE4YcybC-0olA"
+token = "--token--"
 try:
     bot.run(token)
 except Exception as exc:
