@@ -287,8 +287,10 @@ class Function:
         guild_id = ctx.guild.id
         roles = member.roles
         for role in roles:
+            if role.name == "@everyone":
+                continue
             role_id = role.id
-            manager = self.database_handler.get_role(role_id, guild_id)["dataManager"]
+            manager = self.database_handler.get_role(role_id, guild_id)["isDataManager"]
             if manager:
                 return True
         return False
@@ -335,12 +337,14 @@ class Function:
 
     def get_prerequis_embed(self) -> discord.Embed:
         dictionary = {
-            "Salons": ["Un salon pour les **commandes**",
-                       "Un salon pour les **évenements**",
-                       "Un salon pour les **annonces**"],
+            "Salons": ["Un salon pour les **commandes**, que vous renseignez grâce à la commande\n``-setCMDChannel``",
+                       "Un salon pour les **évenements**, que vous renseignez grâce à la commande\n``-setChannelEvent``",
+                       "Un salon pour les **annonces** que vous renseignez grâce à la commande\n``-setAdChannel``"],
             "Rôles": [
-                "Un rôle **dataManager** qui permettra à des membres de s'occuper du bot sans avoir besoin d'être admin",
-                "Un rôle **event** qui sera mentionné lorsqu'un évenement est affiché"]
+                "Un rôle **dataManager** qui permettra à des membres de s'occuper du bot sans avoir besoin d'être admin"
+                ", que vous renseignez grâce à la commande\n``-setRoleManager``",
+                "Un rôle **event** qui sera mentionné lorsqu'un évenement est affiché, que vous renseignez grâce à "
+                "la commande\n``-setRoleEvent``"]
         }
 
         embed = discord.Embed(title="Prérequis",

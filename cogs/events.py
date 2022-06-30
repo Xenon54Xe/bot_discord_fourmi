@@ -56,6 +56,8 @@ class Events(commands.Cog):
     # ajoute le membre qui a rejoint dans la BDD
     @commands.Cog.listener()
     async def on_member_join(self, member):
+        if member.bot:
+            return
         guild = member.guild
         guild_id = guild.id
 
@@ -70,6 +72,8 @@ class Events(commands.Cog):
     # met à jour le membre dans la BDD
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
+        if after.bot:
+            return
         guild = after.guild
         guild_id = guild.id
 
@@ -85,6 +89,8 @@ class Events(commands.Cog):
     # supprime le membre qui a quitté de la BDD
     @commands.Cog.listener()
     async def on_member_remove(self, member):
+        if member.bot:
+            return
         guild = member.guild
         guild_id = guild.id
 
@@ -99,6 +105,8 @@ class Events(commands.Cog):
     # ajoute le rôle qui a été créé dans la BDD
     @commands.Cog.listener()
     async def on_guild_role_create(self, role):
+        if role.is_bot_managed():
+            return
         guild = role.guild
         guild_id = guild.id
 
@@ -113,6 +121,8 @@ class Events(commands.Cog):
     # met à jour le rôle dans la BDD
     @commands.Cog.listener()
     async def on_guild_role_update(self, before, after):
+        if after.is_bot_managed():
+            return
         guild = after.guild
         guild_id = guild.id
 
@@ -123,11 +133,14 @@ class Events(commands.Cog):
             self.database_handler.update_role(role_id, guild_id, role_name)
         except:
             raise Exception(f"Le rôle '{role_name}' du serveur '{guild.name}' à été modifié et ne figurait "
-                            f"pas dans la BDD...")
+                            f"pas dans la BDD...\n"
+                            f"Ou alors ce rôle est un rôle de bot.")
 
     # supprime le rôle qui a été supprimé de la BDD
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role):
+        if role.is_bot_managed():
+            return
         guild = role.guild
         guild_id = guild.id
 

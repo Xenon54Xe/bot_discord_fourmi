@@ -16,6 +16,12 @@ class AdminCommands(commands.Cog):
         self.database_handler = DatabaseHandler("database.db")
         self.functions = fc.Function()
 
+    # commande qui dit ce qu'il faut pour le bot
+    @commands.command()
+    async def prerequis(self, ctx):
+        embed = self.functions.get_prerequis_embed()
+        await ctx.send(embed=embed)
+
     # définit le rôle manager du serveur
     @commands.command()
     @commands.has_permissions(administrator=True)
@@ -161,6 +167,24 @@ class AdminCommands(commands.Cog):
                     await ctx.send(f"Le rôle **{role.name}** à des permissions trop avancées pour être movable :\n"
                                    f"*{to_say}*")
                     self.database_handler.set_role_is_movable(role_id, guild_id, False)
+                    continue
+
+                # vérifie que le rôle ne soit pas supérieur au rôle du bot dans la hiérarchie
+                # 1er rôle = @everyone
+                roles_hierarchie = guild.roles
+                bot_role_pos = 0
+                targeted_role_pos = 0
+                for i in range(len(roles_hierarchie)):
+                    role_h = roles_hierarchie[i]
+                    if role_h == role:
+                        targeted_role_pos = i
+                    elif role_h.is_bot_managed() and role_h.name == self.bot.user.name:
+                        bot_role_pos = i
+                    if bot_role_pos != 0 and targeted_role_pos != 0:
+                        break
+                if bot_role_pos < targeted_role_pos:
+                    await ctx.send(f"Le rôle **'{role.name}'** est supérieur à mon rôle dans la hiérarchie donc je ne "
+                                   f"peux pas le donner ou l'enlever à quelqu'un.")
                     continue
 
                 # Rend le rôle movable si tout est bon

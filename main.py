@@ -15,7 +15,7 @@ Création du bot
 """
 intents = discord.Intents.default()
 intents.members = True
-bot = commands.Bot(command_prefix="-", description="Alpha- du bot :)", intents=intents)
+bot = commands.Bot(command_prefix=">", description="Alpha- du bot :)", intents=intents)
 bot.remove_command('help')
 
 # dictionnaire qui contient toutes les aides
@@ -344,7 +344,6 @@ async def help(ctx, arg=None):
             ('reloadHC', ''),
             ('getSuggestion', ''),
             ('help', 'Aide'),
-            ('prerequis', 'donne les prérequis du bot'),
             ('addHelp', '')
         ],
 
@@ -387,6 +386,7 @@ async def help(ctx, arg=None):
         ],
 
         "AdminCommands": [
+            ('prerequis', 'donne les prérequis du bot'),
             ('setRoleManager', 'définir le rôle data manager'),
             ('getRoleManager', 'donne le rôle data manager'),
             ('setCMDChannel', 'définir le salon des commandes'),
@@ -457,13 +457,6 @@ async def help(ctx, arg=None):
         await ctx.send(embed=embed)
 
 
-# commande qui dit ce qu'il faut pour le bot
-@bot.command()
-async def prerequis(ctx):
-    embed = functions.get_prerequis_embed()
-    await ctx.send(embed=embed)
-
-
 # quand le bot est lancé
 @bot.event
 async def on_ready():
@@ -521,7 +514,7 @@ async def on_command_error(ctx, error):
         raise error
 
 # démarrage du bot
-token = "OTgyNzIyODMzNTE4MDYzNjM2.GGlf-q.RIWLuprIXX8WsjrTTdhHqWheIldQqWcRBz2Glg"
+token = "OTgyNzIyODMzNTE4MDYzNjM2.GbpZVj.VB33sQLudPsTmmHH1Tow_HoiUlIlZMkdsi5jBg"
 try:
     bot.run(token)
 except Exception as exc:

@@ -88,11 +88,19 @@ class MemberCommands(commands.Cog):
         member_id = ctx.author.id
 
         # récupération des données
-        percent_list = self.functions.take_data_for_percentage(args)
+        try:
+            percent_list = self.functions.take_data_for_percentage(args)  # si cette fonction ne réussie pas c'est
+            # qu'il n'y a pas les nombres mais qu'il y a cac ou vel ou tir ou army
+        except:
+            await ctx.send("Il manque les nombres !")
+            return
         if percent_list[0] is False:
             await ctx.send(percent_list[1])
         else:
             percent_list = percent_list[1]
+        if len(percent_list) == 0:
+            await ctx.send("Il manque les données. Vous devez écrire comme dans l'exemple : `"
+                           "`cac 5 5 5 tir 105 420 329``, vous pouvez choisir entre **army, cac, vel et tir**.")
 
         # récupération des données de la BDD
         percentage_db = self.database_handler.get_user(member_id, guild_id)["percentage"]
@@ -293,7 +301,12 @@ class MemberCommands(commands.Cog):
             role_id = role.id
             movable = self.database_handler.get_role(role_id, guild_id)["isMovable"]
             if movable:
-                await member.add_roles(role)
+                try:
+                    await member.add_roles(role)
+                except:
+                    await ctx.send(f"Le rôle **'{role.name}'** est trop haut dans la hiérarchie, je ne peux pas vous "
+                                   f"le donner.")
+                    self.database_handler.set_role_is_movable(role_id, guild_id, False)
             else:
                 await ctx.send(f"Vous n'avez pas le droit de vous donner le rôle **{role.name}**.")
 
@@ -326,7 +339,12 @@ class MemberCommands(commands.Cog):
             role_id = role.id
             movable = self.database_handler.get_role(role_id, guild_id)["isMovable"]
             if movable:
-                await member.remove_roles(role)
+                try:
+                    await member.remove_roles(role)
+                except:
+                    await ctx.send(f"Le rôle **'{role.name}'** est trop haut dans la hiérarchie, je ne peux pas vous "
+                                   f"l'enlever.")
+                    self.database_handler.set_role_is_movable(role_id, guild_id, False)
             else:
                 await ctx.send(f"Vous n'avez pas le droit de vous enlever le rôle **{role.name}**.")
 
