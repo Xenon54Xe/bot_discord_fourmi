@@ -521,7 +521,7 @@ async def on_command_error(ctx, error):
         raise error
 
 # démarrage du bot
-token = "OTgyNzIyODMzNTE4MDYzNjM2.GcrzIv.5g2_34neFaLZnwsj7alSECWYgeigkyWO5qUEow"
+token = "OTgyNzIyODMzNTE4MDYzNjM2.GGlf-q.RIWLuprIXX8WsjrTTdhHqWheIldQqWcRBz2Glg"
 try:
     bot.run(token)
 except Exception as exc:

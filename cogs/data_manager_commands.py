@@ -340,15 +340,25 @@ class DataManagerCommands(commands.Cog):
             else:
                 name = "pas précisée"
 
-            say = f"**```Nombre de spécialité {name} : {len(dictionary[key])}```**"
-            for member_dict in dictionary[key]:
-                say += f"``{member_dict['username']}``\n"
-                if member_dict["userId"] == -1:
-                    say = say[:-1]
-                    say += f"{warning}\n"
-            await channel.send(say)
+            await channel.send(f"**```Nombre de spécialité {name} : {len(dictionary[key])}```**")
+            members = dictionary[key]
+            for nb_users in range(len(members)):
+                say = ""
+                for ten_user in range(10):
+                    try:
+                        user = members[nb_users * 10 + ten_user]
+                    except:
+                        break
+                    say += f"***-*** ``{user['username']}``\n"
+                    if user["userId"] == -1:
+                        say = say[:-1]
+                        say += f"{warning}\n"
+                if say != "":
+                    await channel.send(say)
+                else:
+                    break
 
-        await first_msg.reply(f'Le début est la haut.')
+        await first_msg.reply(f'Le début est là-haut.')
 
     # donne les pourcentages de tous les membres
     @commands.command()
