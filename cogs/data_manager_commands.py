@@ -415,6 +415,92 @@ class DataManagerCommands(commands.Cog):
         await channel.send("__Si il manque des membres c'est qu'ils n'ont pas rempli leurs pourcentages__.")
         await first_msg.reply(f'Le début est là-haut.')
 
+    @commands.command()
+    async def getData(self, ctx):
+        guild = ctx.guild
+        guild_id = guild.id
+
+        user = ctx.author
+        channel = await user.create_dm()
+
+        first_msg = await channel.send("__Données__")
+
+        """
+        Rôles
+        """
+        roles = self.database_handler.get_all_roles(guild_id)
+        await channel.send("**```Rôles :```**")
+
+        role_data_manager = [i for i in roles if i["isDataManager"]]
+        if len(role_data_manager) == 1:
+            await channel.send(f"Le rôle **data manager** est **{role_data_manager[0]['roleName']}**.")
+        else:
+            await channel.send("Il n'y a pas de rôles **data manager**.")
+
+        roles_movable = [i for i in roles if i["isMovable"]]
+        if len(roles_movable) > 0:
+            text = "Les rôles **movable** sont :"
+            for role in roles_movable:
+                name = role['roleName']
+                text += f" **{name}**,"
+            text = text[:-1]
+            await channel.send(f"{text}.")
+        else:
+            await channel.send("Il n'y a pas de rôles **movable**.")
+
+        roles_event = [i for i in roles if i["isEvent"]]
+        if len(roles_event) > 0:
+            text = "Les rôles **event** sont :"
+            for role in roles_event:
+                name = role['roleName']
+                text += f" **{name}**,"
+            text = text[:-1]
+            await channel.send(f"{text}.")
+        else:
+            await channel.send("Il n'y a pas de rôles **event**.")
+
+        text = "Le **nombre d'annonces** que les rôles peuvent faire sont :"
+        for role in roles:
+            name = role["roleName"]
+            ad_value = role["adValue"]
+            text += f" **{name}={ad_value}**,"
+        text = text[:-1]
+        await channel.send(text)
+
+        """
+        Serveur
+        """
+        guild_db = self.database_handler.get_guild(guild_id)
+
+        cmd_channel_id = guild_db["cmdChannelId"]
+        cmd_channel = guild.get_channel(cmd_channel_id)
+        if cmd_channel is not None:
+            cmd_text = f"Le salon des commandes est {cmd_channel.mention}, son id est **{cmd_channel.id}**."
+        else:
+            cmd_text = "Il n'y a pas de salon réservé aux commandes."
+
+        event_channel_id = guild_db["eventChannelId"]
+        event_channel = guild.get_channel(event_channel_id)
+        if event_channel is None:
+            event_channel = guild.text_channels[0]
+        event_text = f"Le salon où sont affichés les évenements est {event_channel.mention}, son id est " \
+                     f"**{event_channel.id}**."
+
+        ad_channel_id = guild_db["adChannelId"]
+        ad_channel = guild.get_channel(ad_channel_id)
+        if ad_channel is None:
+            ad_channel = guild.text_channels[0]
+        ad_text = f"Le salon où sont envoyées les annonces est {ad_channel.mention}, son id est **{ad_channel.id}**."
+
+        embed = discord.Embed(title="Salons", description="Voici les informations sur les salons spéciaux du serveur.")
+        embed.add_field(name="Salon des commandes", value=cmd_text)
+        embed.add_field(name="Salon des évenements", value=event_text)
+        embed.add_field(name="Salon des annonces", value=ad_text)
+
+        await channel.send(embed=embed)
+
+        await first_msg.reply("Le début est là-haut.")
+
     # réinitialise les données de tous les membres
     @commands.command()
     async def reset(self, ctx, arg):
@@ -763,7 +849,10 @@ class EventCommands(commands.Cog):
                         embed = self.embed_event(event, description="Un évenement à commencé !")
                         mentions = ""
                         for role_event in roles_event:
-                            mentions += f"{role_event.mention}"
+                            if role_event.name == "@everyone":
+                                mentions += "@everyone"
+                            else:
+                                mentions += f"{role_event.mention}"
                         await channel_event.send(content=mentions, embed=embed)
 
                         # si cet évenement est permanent, ajouter le temps pour la prochaine date d'affichage
@@ -785,7 +874,10 @@ class EventCommands(commands.Cog):
                         embed = self.embed_event(event)
                         mentions = ""
                         for role_event in roles_event:
-                            mentions += f"{role_event.mention}"
+                            if role_event.name == "@everyone":
+                                mentions += "@everyone"
+                            else:
+                                mentions += f"{role_event.mention}"
                         await channel_event.send(content=mentions, embed=embed)
 
                         # stocker qu'il à été appelé

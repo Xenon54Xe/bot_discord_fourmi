@@ -387,6 +387,7 @@ async def help(ctx, arg=None):
             ('getAllAvailability', 'donne toutes les disponibilités'),
             ('getAllSpeciality', 'donne toutes les spécialités'),
             ('getAllPercentage', 'donne tous les pourcentages'),
+            ('getData', 'donne les données du serveur'),
             ('reset', 'réinitialise les choix et les disponibilités')
         ],
 
@@ -447,7 +448,7 @@ async def help(ctx, arg=None):
                 x = help_commands[cmd[0]]
                 value += f"``'{cmd[0]}'{' ' * nb_of_space}`` |ㅤ**{cmd[1]}**\n"
             except:
-                value += f"``'{cmd[0]}'{' ' * nb_of_space}`` |ㅤ**{cmd[1]}** {warning}"
+                value += f"``'{cmd[0]}'{' ' * nb_of_space}`` |ㅤ**{cmd[1]}** {warning}\n"
         value = value[:-1]
 
         if len(cmds) > len(bot_cmds):
@@ -540,4 +541,4 @@ token = "--token--"
 try:
     bot.run(token)
 except Exception as exc:
-    raise Exception(exc.args, "Pas de co ?, Mauvais token ?")
+    raise exc
