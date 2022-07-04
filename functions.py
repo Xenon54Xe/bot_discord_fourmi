@@ -4,12 +4,9 @@ from os import path
 
 import discord
 
-from bot_discord_fourmi.BDD.database_handler import DatabaseHandler
-
 
 class Function:
     def __init__(self):
-        self.database_handler = DatabaseHandler("database.db")
         self.path = path.abspath("")
 
         self.list_true = ['True', 'yes', 'y', 'true', 't', '1', 'enable', 'on', 'oui', 'vrai']
@@ -277,31 +274,6 @@ class Function:
         except:
             return False
 
-    # vérifie qu'un membre ayant fait la commande puisse l'utiliser
-    def is_data_manager(self, ctx):
-        member = ctx.author
-        is_admin = member.guild_permissions.administrator
-        if is_admin:
-            return True
-
-        guild_id = ctx.guild.id
-        roles = member.roles
-        for role in roles:
-            if role.name == "@everyone":
-                continue
-            role_id = role.id
-            manager = self.database_handler.get_role(role_id, guild_id)["isDataManager"]
-            if manager:
-                return True
-        return False
-
-    # essaye de trouver un utilisateur depuis son prénom
-    def find_users_with_name(self, guild_id: int, name: str) -> list:
-        users = self.database_handler.get_all_users(guild_id)
-        found_users = [i for i in users if i["username"] == name]
-
-        return found_users
-
     def take_data_for_percentage(self, args) -> (bool, vars()):
         # trouver les clés
         keys_pos = []
@@ -360,69 +332,3 @@ class Function:
         embed.set_footer(text="Bonjour !")
         return embed
 
-    # met à jour les utilisateurs d'un serveur
-    def update_members(self, guild: discord.Guild):
-        members = guild.members
-        guild_id = guild.id
-
-        for member in members:
-            if member.bot is False:
-                if self.database_handler.user_exists_with(member.id, guild_id):
-                    self.database_handler.update_user(member.id, guild_id, member.display_name)
-                else:
-                    self.database_handler.add_user(member.id, guild_id, member.display_name)
-            else:
-                try:
-                    self.database_handler.remove_user(member.id, guild_id)
-                except:
-                    pass
-
-        members_db = self.database_handler.get_all_users(guild_id)
-        for member_db in members_db:
-            member_db_id = member_db["userId"]
-            if member_db_id == -1:
-                continue
-
-            found = False
-            for member in members:
-                if member.id == member_db_id:
-                    found = True
-                    break
-            if not found:
-                self.database_handler.remove_user(member_db_id, guild_id)
-
-    # met à jour les rôles d'un serveur
-    def update_roles(self, guild: discord.Guild):
-        roles = guild.roles
-        guild_id = guild.id
-
-        for role in roles:
-            if role.name != "@everyone" and role.is_bot_managed() is False:
-                if self.database_handler.role_exists_with(role.id, guild_id):
-                    self.database_handler.update_role(role.id, guild_id, role.name)
-                else:
-                    self.database_handler.add_role(role.id, guild_id, role.name)
-            else:
-                try:
-                    self.database_handler.remove_role(role.id, guild_id)
-                except:
-                    pass
-
-        roles_db = self.database_handler.get_all_roles(guild_id)
-        for role_db in roles_db:
-            role_db_id = role_db["roleId"]
-            found = False
-            for role in roles:
-                if role.id == role_db_id:
-                    found = True
-                    break
-            if not found:
-                self.database_handler.remove_role(role_db_id, guild_id)
-
-    # met à jour le serveur
-    def update_guild(self, guild: discord.guild):
-        guild_id = guild.id
-        if self.database_handler.guild_exists_with(guild_id):
-            self.database_handler.update_guild(guild_id, guild.name)
-        else:
-            self.database_handler.add_guild(guild_id, guild.name)

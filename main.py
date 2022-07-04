@@ -480,15 +480,85 @@ async def help(ctx, arg=None):
         await ctx.send(embed=embed)
 
 
+# met à jour le serveur
+def update_guild(guild: discord.guild):
+    guild_id = guild.id
+    if database_handler.guild_exists_with(guild_id):
+        database_handler.update_guild(guild_id, guild.name)
+    else:
+        database_handler.add_guild(guild_id, guild.name)
+
+
+# met à jour les utilisateurs d'un serveur
+def update_members(guild: discord.Guild):
+    members = guild.members
+    guild_id = guild.id
+
+    for member in members:
+        if member.bot is False:
+            if database_handler.user_exists_with(member.id, guild_id):
+                database_handler.update_user(member.id, guild_id, member.display_name)
+            else:
+                database_handler.add_user(member.id, guild_id, member.display_name)
+        else:
+            try:
+                database_handler.remove_user(member.id, guild_id)
+            except:
+                pass
+
+    members_db = database_handler.get_all_users(guild_id)
+    for member_db in members_db:
+        member_db_id = member_db["userId"]
+        if member_db_id == -1:
+            continue
+
+        found = False
+        for member in members:
+            if member.id == member_db_id:
+                found = True
+                break
+        if not found:
+            database_handler.remove_user(member_db_id, guild_id)
+
+
+# met à jour les rôles d'un serveur
+def update_roles(guild: discord.Guild):
+    roles = guild.roles
+    guild_id = guild.id
+
+    for role in roles:
+        if role.name != "@everyone" and role.is_bot_managed() is False:
+            if database_handler.role_exists_with(role.id, guild_id):
+                database_handler.update_role(role.id, guild_id, role.name)
+            else:
+                database_handler.add_role(role.id, guild_id, role.name)
+        else:
+            try:
+                database_handler.remove_role(role.id, guild_id)
+            except:
+                pass
+
+    roles_db = database_handler.get_all_roles(guild_id)
+    for role_db in roles_db:
+        role_db_id = role_db["roleId"]
+        found = False
+        for role in roles:
+            if role.id == role_db_id:
+                found = True
+                break
+        if not found:
+            database_handler.remove_role(role_db_id, guild_id)
+
+
 # quand le bot est lancé
 @bot.event
 async def on_ready():
     change_status.start()
     guilds = bot.guilds
     for guild in guilds:
-        functions.update_guild(guild)
-        functions.update_members(guild)
-        functions.update_roles(guild)
+        update_guild(guild)
+        update_members(guild)
+        update_roles(guild)
     load_all_cogs()
     clean_help_command()
     print("Ready")
@@ -537,7 +607,7 @@ async def on_command_error(ctx, error):
         raise error
 
 # démarrage du bot
-token = "--token--"
+token = "OTgyNzIyODMzNTE4MDYzNjM2.G5lp9x.90rwTGYVmWoEVT941jBYzOydE55qBFOrQQXyk0"
 try:
     bot.run(token)
 except Exception as exc:

@@ -22,7 +22,32 @@ class DataManagerCommands(commands.Cog):
         self.functions = Function()
 
     def cog_check(self, ctx):
-        return self.functions.is_data_manager(ctx)
+        return self.is_data_manager(ctx)
+
+    # vérifie qu'un membre ayant fait la commande puisse l'utiliser
+    def is_data_manager(self, ctx):
+        member = ctx.author
+        is_admin = member.guild_permissions.administrator
+        if is_admin:
+            return True
+
+        guild_id = ctx.guild.id
+        roles = member.roles
+        for role in roles:
+            if role.name == "@everyone":
+                continue
+            role_id = role.id
+            manager = self.database_handler.get_role(role_id, guild_id)["isDataManager"]
+            if manager:
+                return True
+        return False
+
+    # essaye de trouver un utilisateur depuis son prénom
+    def find_users_with_name(self, guild_id: int, name: str) -> list:
+        users = self.database_handler.get_all_users(guild_id)
+        found_users = [i for i in users if i["username"] == name]
+
+        return found_users
 
     # ajoute un utilisateur virtuel
     @commands.command()
@@ -30,7 +55,7 @@ class DataManagerCommands(commands.Cog):
         guild = ctx.guild
         guild_id = guild.id
 
-        find = self.functions.find_users_with_name(guild_id, name)
+        find = self.find_users_with_name(guild_id, name)
         if len(find) > 0:
             await ctx.send(f"Il existe déjà un utilisateur avec le nom __'{name}'__.")
             return
@@ -89,7 +114,7 @@ class DataManagerCommands(commands.Cog):
         guild = ctx.guild
         guild_id = guild.id
 
-        users = self.functions.find_users_with_name(guild_id, name)
+        users = self.find_users_with_name(guild_id, name)
         if len(users) == 0:
             await ctx.send(f"Le membre ayant le nom __'{name}'__ n'existe pas.")
             return
@@ -140,7 +165,7 @@ class DataManagerCommands(commands.Cog):
             while arg.startswith(" "):
                 arg = arg[1:]
         else:
-            users = self.functions.find_users_with_name(guild_id, username)
+            users = self.find_users_with_name(guild_id, username)
             if len(users) == 0:
                 await ctx.send(f"L'utilisateur avec le nom __'{username}'__ n'a pas été trouvé.")
                 return

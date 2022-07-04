@@ -1,11 +1,49 @@
 import os
 import sqlite3
 
+from bot_discord_fourmi.functions import Function
+
 
 class DatabaseHandler:
     def __init__(self, database_name: str):
+        self.functions = Function()
         self.con = sqlite3.connect(f"{os.path.dirname(os.path.abspath(__file__))}/{database_name}")
+        self.check()
         self.con.row_factory = sqlite3.Row
+
+    # vérifie que la BDD soit bien formée
+    def check(self):
+        cursor = self.con.cursor()
+        try:
+            cursor.execute("SELECT * FROM Guild LIMIT 1")
+            cursor.execute("SELECT * FROM User LIMIT 1")
+            cursor.execute("SELECT * FROM Role LIMIT 1")
+        except Exception as exc:
+            print(exc)
+            self.initialise()
+
+    # initialise la BDD
+    def initialise(self):
+        with open("database.db", "w", encoding="UTF-8") as file:
+            file.write("")
+            file.close()
+
+        cursor = self.con.cursor()
+
+        with open("init_instruction.sql", "r", encoding="UTF-8") as file:
+            instructions = file.readlines()
+            text = ""
+            for line in instructions:
+                text += line
+            file.close()
+
+        parts = self.functions.take_parts(text, "/i:")
+
+        for query in parts:
+            cursor.execute(query)
+        self.con.commit()
+
+        return self.con
 
     # ajoute un utilisateur dans la BDD
     def add_user(self, user_id: int, guild_id: int, username: str):
@@ -342,3 +380,6 @@ class DatabaseHandler:
         cursor.close()
 
         return len(result) == 1
+
+
+bdd = DatabaseHandler("database.db")
