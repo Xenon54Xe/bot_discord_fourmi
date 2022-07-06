@@ -5,7 +5,7 @@ import random
 import asyncio
 
 from BDD.database_handler import DatabaseHandler
-from bot_discord_fourmi.functions import Function
+from functions import Function
 
 database_handler = DatabaseHandler("database.db")
 functions = Function()

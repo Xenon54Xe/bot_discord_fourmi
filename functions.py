@@ -309,9 +309,9 @@ class Function:
 
     def get_prerequis_embed(self) -> discord.Embed:
         dictionary = {
-            "Salons": ["Un salon pour les **commandes**, que vous renseignez grâce à la commande\n``-setCMDChannel``",
+            "Salons": ["Un salon pour les **commandes**, que vous renseignez grâce à la commande\n``-setChannelCMD``",
                        "Un salon pour les **évenements**, que vous renseignez grâce à la commande\n``-setChannelEvent``",
-                       "Un salon pour les **annonces** que vous renseignez grâce à la commande\n``-setAdChannel``"],
+                       "Un salon pour les **annonces** que vous renseignez grâce à la commande\n``-setChannelAd``"],
             "Rôles": [
                 "Un rôle **dataManager** qui permettra à des membres de s'occuper du bot sans avoir besoin d'être admin"
                 ", que vous renseignez grâce à la commande\n``-setRoleManager``",
