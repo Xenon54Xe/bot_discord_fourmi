@@ -27,7 +27,7 @@ class Function:
         self.max_text_length = 80
 
     # retourne tout ce qui est entre les balises
-    def take_parts(self, string: str, marker: str, take_first: bool = False) -> list[str]:
+    def take_parts(self, string: str, marker: str, take_first: bool = False) -> [str]:
         founded_pos = []
         for i in range(len(string)):
             find_marker = ""
@@ -116,7 +116,7 @@ class Function:
         return [year, month, day, hour, minutes, sec]
 
     # retourne la/les position(s) de début et de fin de la cible
-    def find(self, string: str, target: str) -> list[tuple]:
+    def find(self, string: str, target: str) -> [tuple]:
         founded_pos = []
         for i in range(len(string)):
             find_target = ""
@@ -198,7 +198,7 @@ class Function:
 
     # retourne un dictionnaire de listes depuis un texte
     def unpack_str_to_dict_list(self, string: str, value_splitter: str = "/v:", dict_splitter: str = "/d:",
-                              list_splitter: str = "/l:") -> dict[int: list]:
+                              list_splitter: str = "/l:") -> dict:
         if string == "" or string is None:
             return {}
         try:
@@ -250,7 +250,7 @@ class Function:
 
     # retourne une liste de dictionnaires depuis un texte
     def unpack_str_to_list_dict(self, string: str = None, value_splitter: str = "/v:", dict_splitter: str = "/d:",
-                                list_splitter: str = "/l:") -> list[dict]:
+                                list_splitter: str = "/l:") -> [dict]:
         if string is None or string == "":
             return []
 
@@ -274,7 +274,7 @@ class Function:
         except:
             return False
 
-    def take_data_for_percentage(self, args) -> (bool, vars()):
+    def take_data_for_percentage(self, args) -> tuple:
         # trouver les clés
         keys_pos = []
         for i in self.user_data_percentage:
