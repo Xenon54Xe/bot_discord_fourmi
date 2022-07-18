@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 
 from bot_discord_fourmi.BDD.database_handler import DatabaseHandler
-from bot_discord_fourmi import functions as fc
+from bot_discord_fourmi.functions import Function
 
 
 def setup(bot):
@@ -14,7 +14,7 @@ class MemberCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.database_handler = DatabaseHandler("database.db")
-        self.functions = fc.Function()
+        self.functions = Function()
 
     # ajoute une suggestion dans le serveur
     @commands.command()

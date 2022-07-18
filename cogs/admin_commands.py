@@ -2,7 +2,7 @@ from discord.ext import commands
 import asyncio
 
 from bot_discord_fourmi.BDD.database_handler import DatabaseHandler
-from bot_discord_fourmi import functions as fc
+from bot_discord_fourmi.functions import Function
 
 
 def setup(bot):
@@ -14,7 +14,7 @@ class AdminCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.database_handler = DatabaseHandler("database.db")
-        self.functions = fc.Function()
+        self.functions = Function()
 
     # commande qui dit ce qu'il faut pour le bot
     @commands.command()
