@@ -185,7 +185,7 @@ class Function:
         return dictionary
 
     # retourne un texte qui pourrait être converti en dictionnaire de listes
-    def pack_dict_list_to_str(self, dictionary: dict[int: list], value_splitter: str = "/v:", dict_splitter: str = "/d:",
+    def pack_dict_list_to_str(self, dictionary: dict, value_splitter: str = "/v:", dict_splitter: str = "/d:",
                               list_splitter: str = "/l:") -> str:
         try:
             new_dict = {}
@@ -237,7 +237,7 @@ class Function:
         return new_list
 
     # retourne un texte qui pourrait être converti en liste de dictionnaires
-    def pack_list_dict_to_str(self, list: list[dict], value_splitter: str = "/v:", dict_splitter: str = "/d:",
+    def pack_list_dict_to_str(self, list: [dict], value_splitter: str = "/v:", dict_splitter: str = "/d:",
                               list_splitter: str = "/l:") -> str:
         try:
             list_dict_str = []
@@ -331,4 +331,3 @@ class Function:
 
         embed.set_footer(text="Bonjour !")
         return embed
-
