@@ -297,9 +297,7 @@ def clean_help_command():
     p = os.path.abspath("help_command")
     with open(p, "r", encoding="UTF-8") as file:
         text = file.readlines()[0]
-        print(text)
         last_help_command = functions.str_to_dict(text, auto_reformat=False)
-        print(last_help_command)
         file.close()
 
     ctg = [key for key in bot.cogs.keys()]

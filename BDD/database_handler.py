@@ -7,6 +7,7 @@ from bot_discord_fourmi.functions import Function
 class DatabaseHandler:
     def __init__(self, database_name: str):
         self.functions = Function()
+        self.database_name = database_name
         self.con = sqlite3.connect(f"{os.path.dirname(os.path.abspath(__file__))}/{database_name}")
         self.check()
         self.con.row_factory = sqlite3.Row
@@ -24,7 +25,7 @@ class DatabaseHandler:
 
     # initialise la BDD
     def initialise(self):
-        with open("database.db", "w", encoding="UTF-8") as file:
+        with open(self.database_name, "w", encoding="UTF-8") as file:
             file.write("")
             file.close()
 
@@ -42,8 +43,6 @@ class DatabaseHandler:
         for query in parts:
             cursor.execute(query)
         self.con.commit()
-
-        return self.con
 
     # ajoute un utilisateur dans la BDD
     def add_user(self, user_id: int, guild_id: int, username: str):
