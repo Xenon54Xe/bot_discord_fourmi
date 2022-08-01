@@ -4,11 +4,11 @@ import os
 import random
 import asyncio
 
-from BDD.database_handler import DatabaseHandler
-from functions import Function
+import BDD.database_handler as db
+import functions as fc
 
-database_handler = DatabaseHandler("database.db")
-functions = Function()
+database_handler = db.DatabaseHandler("database.db")
+functions = fc.Function()
 
 """
 Création du bot

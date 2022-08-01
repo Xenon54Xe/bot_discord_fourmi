@@ -1,6 +1,10 @@
 import os
 import sqlite3
 
+import sys
+p = os.path.abspath(".")
+sys.path.insert(0, p)
+
 from bot_discord_fourmi.functions import Function
 
 
@@ -19,19 +23,18 @@ class DatabaseHandler:
             cursor.execute("SELECT * FROM Guild LIMIT 1")
             cursor.execute("SELECT * FROM User LIMIT 1")
             cursor.execute("SELECT * FROM Role LIMIT 1")
-        except Exception as exc:
-            print(exc)
+        except:
             self.initialise()
 
     # initialise la BDD
     def initialise(self):
-        with open(self.database_name, "w", encoding="UTF-8") as file:
+        with open(f"BDD/{self.database_name}", "w", encoding="UTF-8") as file:
             file.write("")
             file.close()
 
         cursor = self.con.cursor()
 
-        with open("init_instruction.sql", "r", encoding="UTF-8") as file:
+        with open("BDD/init_instruction.sql", "r", encoding="UTF-8") as file:
             instructions = file.readlines()
             text = ""
             for line in instructions:
@@ -379,6 +382,3 @@ class DatabaseHandler:
         cursor.close()
 
         return len(result) == 1
-
-
-bdd = DatabaseHandler("database.db")

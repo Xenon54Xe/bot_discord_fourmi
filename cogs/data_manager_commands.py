@@ -488,7 +488,7 @@ class DataManagerCommands(commands.Cog):
         for role in roles:
             name = role["roleName"]
             ad_value = role["adValue"]
-            text += f" **{name}={ad_value}**,"
+            text += f" **@{name}={ad_value}**,"
         text = text[:-1]
         await channel.send(text)
 
