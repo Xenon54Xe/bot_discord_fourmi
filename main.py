@@ -216,7 +216,7 @@ async def reload(ctx, name=None):
 
 # charge toutes les extensions
 def load_all_cogs():
-    cogs = os.listdir("cogs")
+    cogs = os.listdir("cogs")  # bug d'appel des cogs
     for cog_name in cogs:
         if cog_name.endswith(".py") and cog_name != "__init__.py":
             try:

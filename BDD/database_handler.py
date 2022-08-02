@@ -5,7 +5,7 @@ import sys
 p = os.path.abspath(".")
 sys.path.insert(0, p)
 
-from bot_discord_fourmi.functions import Function
+from functions import Function
 
 
 class DatabaseHandler:

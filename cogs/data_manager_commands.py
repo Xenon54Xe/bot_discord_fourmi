@@ -1,12 +1,17 @@
 import datetime
 import time
 import asyncio
+import os
 
 import discord
 from discord.ext import commands, tasks
 
-from bot_discord_fourmi.functions import Function
-from bot_discord_fourmi.BDD.database_handler import DatabaseHandler
+import sys
+p = os.path.abspath(".")
+sys.path.insert(0, p)
+
+from functions import Function
+from BDD.database_handler import DatabaseHandler
 
 
 def setup(bot):
@@ -953,7 +958,7 @@ class EventCommands(commands.Cog):
         print("###END recall_event###")
 
     # retourne le temps d'attente avant le prochain affichage le plus court
-    def get_shortest_time(self, list_dict: list[dict], guild_id: int, maximum: int = 3600) -> float:
+    def get_shortest_time(self, list_dict: [dict], guild_id: int, maximum: int = 3600) -> float:
         current_time_float = time.time()
         time_before_last_call = self.database_handler.get_guild(guild_id)["timeBeforeLastCall"]
 
