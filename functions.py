@@ -315,7 +315,7 @@ class Function:
         for i in parts:
             y = self.take_numbers(i, to_int=True)
             if len(y) != 3:
-                return (False, f"Dans __'{i}'__ il faut 3 nombres. Et il n'y a que **"
+                return (False, f"Dans __'{i}'__ il faut 3 nombres. Et vous avez écrit **"
                         f"'{self.take_numbers(i)}'**.")
             x = i[0:4].replace(" ", "")
             percent_list.append((x, y))
