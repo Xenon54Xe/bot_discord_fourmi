@@ -92,7 +92,7 @@ class Function:
 
         if to_int:
             numbers = numbers.split(" ")
-            return [self.reformat_type(i) for i in numbers]
+            return [int(i) for i in numbers]
         return numbers
 
     # retourne la date sous forme de float depuis epoch
