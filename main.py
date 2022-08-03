@@ -593,10 +593,12 @@ async def on_command_error(ctx, error):
     guild = ctx.guild
     guild_id = guild.id
 
+    channel = ctx.channel
+
     if isinstance(error, commands.CheckFailure):
         channel_cmd = guild.get_channel(database_handler.get_guild(guild_id)["cmdChannelId"])
 
-        if channel_cmd:
+        if channel_cmd and channel != channel_cmd:
             user_msg = ctx.message
             await user_msg.delete()
             bot_msg = await ctx.send(f"Vous n'avez pas fais la commande dans le bon salon : {channel_cmd.mention}")
@@ -612,7 +614,7 @@ async def on_command_error(ctx, error):
         raise error
 
 # démarrage du bot
-token = "OTgyNzIyODMzNTE4MDYzNjM2.G2c9sj.UA4_M7yBhGUrLlYymL8NdmtO8_kEMPaHHlZ52Y"
+token = "OTgyNzIyODMzNTE4MDYzNjM2.GiJf8z.i3fbSAGAzF_oQ2IJZGFDD0nLj0-OuDMXvQ4jVg"
 try:
     bot.run(token)
 except Exception as exc:
