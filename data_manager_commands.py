@@ -1040,7 +1040,7 @@ class EventCommands(commands.Cog):
                        f"utc et pas en heure locale.")
 
     # retourne un embed depuis un dictionnaire Event
-    def embed_event(self, event: dict, title: str = "Evenement", description: str = "Un évenement va bientôt commencer !",
+    def embed_event(self, event: dict, title: str = "Commandant !", description: str = "Un évenement va bientôt commencer !",
                     show_utc: bool = False, show_id: bool = False) -> discord.Embed:
         date = event["date"]
         dlu = None
