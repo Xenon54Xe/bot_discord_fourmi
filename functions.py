@@ -284,6 +284,21 @@ class Function:
             except:
                 continue
 
+        # mettre dans l'ordre les clés
+        new_keys_pos = []
+        for key in keys_pos:
+            has_found_place = False
+            if len(new_keys_pos) > 0:
+                for i in range(len(new_keys_pos)):
+                    if key[0] < new_keys_pos[i][0]:
+                        new_keys_pos.insert(i, key)
+                        has_found_place = True
+                if has_found_place is False:
+                    new_keys_pos.append(key)
+            else:
+                new_keys_pos.append(key)
+        keys_pos = new_keys_pos
+
         # définir les zones où chercher
         list_pos = []
         for i in range(len(keys_pos)):
