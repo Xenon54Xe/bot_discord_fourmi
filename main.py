@@ -29,7 +29,14 @@ fun_fact = [
     "J'aime pas passer la serpillère",
     "Les fourmis de feu sont dangereuses",
     "Travailler en groupe c'est efficace",
-    "Au secours ! On m'attaque !"
+    "Au secours ! On m'attaque !",
+    "Please be good with me",
+    "I love burn ant with a magnifying glass ! (in the game of course)",
+    "I can't help you fight ant but i can help you manage your alliance",
+    "I've never taste a ice cream ;(",
+    "My ant queen is level 23",
+    "During winter i love eat raclette",
+    "My creators are the best !"
 ]
 
 
@@ -605,7 +612,7 @@ async def on_command_error(ctx, error):
         raise error
 
 # démarrage du bot
-token = "____token____"
+token = "OTgyNzIyODMzNTE4MDYzNjM2.G2c9sj.UA4_M7yBhGUrLlYymL8NdmtO8_kEMPaHHlZ52Y"
 try:
     bot.run(token)
 except Exception as exc:
