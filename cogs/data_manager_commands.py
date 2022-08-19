@@ -1043,6 +1043,7 @@ class EventCommands(commands.Cog):
             embed.add_field(name="Organisation", value=event["organisation"], inline=False)
         if event["permanent"]:
             interval = event["interval"]
+            interval = self.functions.take_numbers(interval, to_int=True)
             value = f"Cet évenement revient tous les __{interval[0]}__ jours et __{interval[1]}__ heures."
 
             embed.add_field(name="Permanent", value=value, inline=False)
