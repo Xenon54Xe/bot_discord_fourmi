@@ -238,10 +238,11 @@ class DataManagerCommands(commands.Cog):
 
         roles = ctx.message.role_mentions
 
-        value = self.functions.reformat_type(value)
-
-        if not isinstance(value, int):
+        try:
+            value = int(value)
+        except:
             await ctx.send(f"La valeur '{value}' que vous avez renseigné n'est pas un nombre entier.")
+            return
 
         if len(roles) == 0:
             await ctx.send("Vous avez oublié la mention du ou des rôles.")
@@ -673,9 +674,7 @@ class EventCommands(commands.Cog):
             event_unpack.append(choosed_event)
 
         event_pack = self.functions.pack_list_dict_to_str(event_unpack)
-        print(len(event_unpack), "len")
-        print(event_unpack)
-        print(event_pack)
+
         self.database_handler.set_event(guild_id, event_pack)
 
         self.recall_event.change_interval(seconds=self.interval)
@@ -774,8 +773,10 @@ class EventCommands(commands.Cog):
         guild = ctx.guild
         guild_id = guild.id
 
-        value = self.functions.reformat_type(seconds)
-        if not isinstance(value, int):
+
+        try:
+            value = int(seconds)
+        except:
             await ctx.send(f"Il faut un nombre, **{seconds}** n'est pas un nombre.")
             return
 
@@ -1021,8 +1022,9 @@ class EventCommands(commands.Cog):
                        f"utc et pas en heure locale.")
 
     # retourne un embed depuis un dictionnaire Event
-    def embed_event(self, event: dict, title: str = "Evenement", description: str = "Un évenement va bientôt commencer !",
+    def embed_event(self, event: dict, title: str = "Commandant !", description: str = "Un évenement va bientôt commencer !",
                     show_utc: bool = False, show_id: bool = False) -> discord.Embed:
+
         date = event["date"]
         dlu = None
 

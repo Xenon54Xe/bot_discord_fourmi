@@ -75,7 +75,8 @@ bot.add_check(cmd_in_good_channel)
 # vérifie si la commande est faite par le propriétaire du bot
 def is_bot_owner(ctx):
     user_id = ctx.author.id
-    return user_id == 753240790779691109
+    if user_id == 753240790779691109 or user_id == 587604292240670720:
+        return True
 
 
 @bot.command()
@@ -331,8 +332,12 @@ def clean_help_command():
 # commande help
 @bot.command()
 async def help(ctx, arg=None):
+    try:
+        arg = int(arg)
+    except:
+        pass
+
     if arg is not None:
-        arg = functions.reformat_type(arg)
         if isinstance(arg, str):
             try:
                 value = help_commands[arg]
@@ -614,7 +619,7 @@ async def on_command_error(ctx, error):
         raise error
 
 # démarrage du bot
-token = "OTgyNzIyODMzNTE4MDYzNjM2.GiJf8z.i3fbSAGAzF_oQ2IJZGFDD0nLj0-OuDMXvQ4jVg"
+token = "OTgyNzIyODMzNTE4MDYzNjM2.GaRliJ.10bXtob4YaSgmS38umYUaoqYtoAUzSlqUAClIQ"
 try:
     bot.run(token)
 except Exception as exc:

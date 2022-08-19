@@ -139,13 +139,12 @@ class Function:
         elif string == "None":
             return None
         try:
-            x = eval(string)
-            if isinstance(x, int) or isinstance(x, float):
+            x = int(string)
+            y = float(string)
+            if x == y:
                 return x
-        except:
-            pass
-        try:
-            return self.take_numbers(string, to_int=True)
+            else:
+                return y
         except:
             return string
 

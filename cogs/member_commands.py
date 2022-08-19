@@ -231,7 +231,10 @@ class MemberCommands(commands.Cog):
         user_ad = self.database_handler.get_user(member_id, guild_id)["ad"]
         user_ad_list = self.functions.str_to_list(user_ad)
 
-        arg = self.functions.reformat_type(arg)
+        try:
+            arg = int(arg)
+        except:
+            pass
 
         if arg in self.functions.list_all:
             for ad_id in user_ad_list:
