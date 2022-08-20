@@ -592,7 +592,7 @@ async def loading_error(ctx, error):
         await ctx.send("Vous ne pouvez pas utiliser la commande de l'être sûprème !")
 
 
-# les erreures de toutes les commandes du bot se retrouvent ici
+# les erreurs de toutes les commandes du bot se retrouvent ici
 @bot.event
 async def on_command_error(ctx, error):
     guild = ctx.guild
@@ -619,7 +619,7 @@ async def on_command_error(ctx, error):
         raise error
 
 # démarrage du bot
-token = "OTgyNzIyODMzNTE4MDYzNjM2.GaRliJ.10bXtob4YaSgmS38umYUaoqYtoAUzSlqUAClIQ"
+token = "___token___"
 try:
     bot.run(token)
 except Exception as exc:

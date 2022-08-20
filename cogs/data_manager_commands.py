@@ -618,6 +618,7 @@ class EventCommands(commands.Cog):
             except:
                 await ctx.send("La date que vous avez renseigné n'est pas sous le format : "
                                "**'DD/MM/YY HH:MM:SS'** -> **'jour/mois/années heures:minutes:secondes'**")
+                return
         elif key == "event":
             pass
         elif key == "organisation":
@@ -630,6 +631,7 @@ class EventCommands(commands.Cog):
             else:
                 await ctx.send("Argument à modifier : **permanent**, cet argument est soit __vrai__ soit __faux__, "
                                "mais je n'ai pas compris ce que vous voulez mettre.")
+                return
         elif key == "interval":
             try:
                 value = self.functions.take_numbers(value, to_int=True)
@@ -711,10 +713,10 @@ class EventCommands(commands.Cog):
         guild = ctx.guild
         guild_id = guild.id
 
-        try:
-            event_id = int(event_id)
-        except:
-            await ctx.send(f"Il faut l'identifiant d'un évenement, __'{event_id}'__ n'est pas un identifiant.")
+        event_id = self.functions.take_numbers(event_id, to_int=True)
+        if len(event_id) == 0:
+            await ctx.send(f"Il faut l'identifiant d'un ou de plusieurs évenements, __'{event_id}'__ n'est pas un identifiant. (Il faut un ou plusieurs nombre)")
+            return
 
         event_db = self.database_handler.get_guild(guild_id)["event"]
         event_unpack = self.functions.unpack_str_to_list_dict(event_db)
@@ -723,20 +725,30 @@ class EventCommands(commands.Cog):
             await ctx.send("Il n'y a pas d'évenements de prévus.")
             return
 
-        event_to_destroy = None
-        for event in event_unpack:
-            if event["id"] == event_id:
-                event_to_destroy = event
-                break
+        event_to_destroy = []
+        for id in event_id:
+            found = False
+            for event in event_unpack:
+                if event["id"] == id:
+                    event_to_destroy.append(event)
+                    found = True
+                    break
+            if not found:
+                await ctx.send(f"L'event avec l'id __'{id}'__ n'a pas été trouvé.")
 
-        if event_to_destroy is not None:
-            event_unpack.remove(event_to_destroy)
-        else:
-            await ctx.send(f"L'évenement avec l'id __'{event_id}'__ n'a pas été trouvé.")
-            return
+        for event in event_to_destroy:
+            event_unpack.remove(event)
 
         event_str = self.functions.pack_list_dict_to_str(event_unpack)
         self.database_handler.set_event(guild_id, event_str)
+
+        self.recall_event.change_interval(seconds=self.interval)
+        self.has_changed_interval = False
+
+        if self.recall_event.is_running:
+            self.recall_event.restart()
+        else:
+            self.recall_event.start()
 
         await ctx.send("Evenement supprimé.")
 
@@ -854,6 +866,7 @@ class EventCommands(commands.Cog):
             for i in range(len(event_unpack)):
                 # définir l'évenement sur lequel faire des testes...
                 event = event_unpack[i]
+                print(event)
 
                 # vérifie si il n'y a pas de date
                 if event["date"] is None:
@@ -889,6 +902,7 @@ class EventCommands(commands.Cog):
                         # si cet évenement est permanent, ajouter le temps pour la prochaine date d'affichage
                         if event["permanent"]:
                             interval = event["interval"]
+                            interval = self.functions.take_numbers(interval, to_int=True)
                             time_to_add = interval[0] * 24 * 3600 + interval[1] * 3600
                             event["date"] += time_to_add
                             # stocker le fait qu'il puisse être rappelé
@@ -1028,12 +1042,14 @@ class EventCommands(commands.Cog):
         date = event["date"]
         dlu = None
 
+        colour = discord.Colour.blue()
+
         if date is None:
-            embed = discord.Embed(title=title, description=description, colour=592029)
+            embed = discord.Embed(title=title, description=description, colour=colour.value)
         else:
             dlu = self.functions.take_date_from_struct(time.gmtime(date))
             timestamp = datetime.datetime(dlu[0], dlu[1], dlu[2], dlu[3], dlu[4], dlu[5])
-            embed = discord.Embed(title=title, description=description, timestamp=timestamp)
+            embed = discord.Embed(title=title, description=description, timestamp=timestamp, colour=colour.value)
 
         embed.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
 
