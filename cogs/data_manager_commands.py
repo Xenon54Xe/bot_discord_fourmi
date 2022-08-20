@@ -1038,41 +1038,52 @@ class EventCommands(commands.Cog):
     # retourne un embed depuis un dictionnaire Event
     def embed_event(self, event: dict, title: str = "Commandant !", description: str = "Un évenement va bientôt commencer !",
                     show_utc: bool = False, show_id: bool = False) -> discord.Embed:
+        try:
+            date = event["date"]
+            dlu = None
 
-        date = event["date"]
-        dlu = None
+            # couleur de l'embed
+            colour = discord.Colour.blue()
 
-        colour = discord.Colour.blue()
+            if date is None:
+                embed = discord.Embed(title=title, description=description, colour=colour.value)
+            else:
+                dlu = self.functions.take_date_from_struct(time.gmtime(date))
+                timestamp = datetime.datetime(dlu[0], dlu[1], dlu[2], dlu[3], dlu[4], dlu[5])
+                embed = discord.Embed(title=title, description=description, timestamp=timestamp, colour=colour.value)
 
-        if date is None:
-            embed = discord.Embed(title=title, description=description, colour=colour.value)
-        else:
-            dlu = self.functions.take_date_from_struct(time.gmtime(date))
-            timestamp = datetime.datetime(dlu[0], dlu[1], dlu[2], dlu[3], dlu[4], dlu[5])
-            embed = discord.Embed(title=title, description=description, timestamp=timestamp, colour=colour.value)
+            embed.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
 
-        embed.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+            if event["event"] is not None:
+                embed.add_field(name="Evenement", value=event["event"], inline=False)
+            if event["organisation"] is not None:
+                embed.add_field(name="Organisation", value=event["organisation"], inline=False)
+            if event["permanent"]:
+                interval = event["interval"]
+                interval = self.functions.take_numbers(interval, to_int=True)
+                value = f"Cet évenement revient tous les __{interval[0]}__ jours et __{interval[1]}__ heures."
 
-        if event["event"] is not None:
-            embed.add_field(name="Evenement", value=event["event"], inline=False)
-        if event["organisation"] is not None:
-            embed.add_field(name="Organisation", value=event["organisation"], inline=False)
-        if event["permanent"]:
-            interval = event["interval"]
-            interval = self.functions.take_numbers(interval, to_int=True)
-            value = f"Cet évenement revient tous les __{interval[0]}__ jours et __{interval[1]}__ heures."
+                embed.add_field(name="Permanent", value=value, inline=False)
 
-            embed.add_field(name="Permanent", value=value, inline=False)
+            if show_utc and date is not None:
+                embed.add_field(name="UTC", value=f"``{dlu[2]}/{dlu[1]}/{dlu[0]} {dlu[3]}:{dlu[4]}:{dlu[5]}``")
 
-        if show_utc and date is not None:
-            embed.add_field(name="UTC", value=f"``{dlu[2]}/{dlu[1]}/{dlu[0]} {dlu[3]}:{dlu[4]}:{dlu[5]}``")
+            text_footer = ""
+            if show_id:
+                text_footer += f"ID: {event['id']}\n"
+            if date is not None:
+                text_footer += "Date "
 
-        text_footer = ""
-        if show_id:
-            text_footer += f"ID: {event['id']}\n"
-        if date is not None:
-            text_footer += "Date "
+            if text_footer != "":
+                embed.set_footer(text=text_footer)
+            return embed
 
-        if text_footer != "":
-            embed.set_footer(text=text_footer)
-        return embed
+        # si bug dans l'event (date pas float, interval pas int, permanent pas True ou False,...)
+        except Exception as exc:
+            embed = discord.Embed(title="Erreur", description="Données corrompues", colour=discord.Colour.dark_red().value)
+            embed.set_author(name=self.bot.user.name, icon_url=self.bot.user.name)
+            embed.add_field(name=f"Event ID : {event['id']}", value="Cet évenement est corrompu, il doit être supprimé...")
+            print("#########Error#########\n"
+                  f"{exc}\n"
+                  "#######################")
+            return embed
