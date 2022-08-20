@@ -876,12 +876,16 @@ class EventCommands(commands.Cog):
                 """
                 Vérifie si déjà appelé.
                 """
-                if event["already_recall"]:
-                    # temps restant = date prévue moins date actuelle (float)
-                    remaining_time_before_next_call = event["date"] - current_time_float
-                else:
-                    # temps restant = date prévue moins date actuelle moins time_before_last_call
-                    remaining_time_before_next_call = event["date"] - current_time_float - time_before_last_call
+                try:  # fait les opérations si la date est bien un float ou int
+                    if event["already_recall"]:
+                        # temps restant = date prévue moins date actuelle (float)
+                        remaining_time_before_next_call = event["date"] - current_time_float
+                    else:
+                        # temps restant = date prévue moins date actuelle moins time_before_last_call
+                        remaining_time_before_next_call = event["date"] - current_time_float - time_before_last_call
+                except Exception as exc:  # si la date stoquée n'est pas un float ou int : erreur... supprimer l'event
+                    event_to_remove.append(event)
+                    continue
 
                 """
                 Si a atteint la date d'envoit de l'évenement
@@ -1081,9 +1085,10 @@ class EventCommands(commands.Cog):
         # si bug dans l'event (date pas float, interval pas int, permanent pas True ou False,...)
         except Exception as exc:
             embed = discord.Embed(title="Erreur", description="Données corrompues", colour=discord.Colour.dark_red().value)
-            embed.set_author(name=self.bot.user.name, icon_url=self.bot.user.name)
+            embed.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
             embed.add_field(name=f"Event ID : {event['id']}", value="Cet évenement est corrompu, il doit être supprimé...")
-            print("#########Error#########\n"
+            print("#########Embed Error#########\n"
+                  f"{event} ////\n"
                   f"{exc}\n"
-                  "#######################")
+                  "#############################")
             return embed
