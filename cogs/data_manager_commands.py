@@ -617,7 +617,7 @@ class EventCommands(commands.Cog):
                 value = self.functions.take_date(value)
             except:
                 await ctx.send("La date que vous avez renseigné n'est pas sous le format : "
-                               "**'DD/MM/YY HH:MM:SS'** -> **'jour/mois/années heures:minutes:secondes'**")
+                               "**'DD/MM/YYYY HH:MM:SS'** -> **'jour/mois/années heures:minutes:secondes'**")
                 return
         elif key == "event":
             pass
