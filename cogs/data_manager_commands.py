@@ -679,13 +679,7 @@ class EventCommands(commands.Cog):
 
         self.database_handler.set_event(guild_id, event_pack)
 
-        self.recall_event.change_interval(seconds=self.interval)
-        self.has_changed_interval = False
-
-        if self.recall_event.is_running:
-            self.recall_event.restart()
-        else:
-            self.recall_event.start()
+        self.restart_recall_event()
 
         await ctx.send("Evenement mis à jour.")
 
@@ -742,13 +736,7 @@ class EventCommands(commands.Cog):
         event_str = self.functions.pack_list_dict_to_str(event_unpack)
         self.database_handler.set_event(guild_id, event_str)
 
-        self.recall_event.change_interval(seconds=self.interval)
-        self.has_changed_interval = False
-
-        if self.recall_event.is_running:
-            self.recall_event.restart()
-        else:
-            self.recall_event.start()
+        self.restart_recall_event()
 
         await ctx.send("Evenement supprimé.")
 
@@ -799,6 +787,17 @@ class EventCommands(commands.Cog):
         self.database_handler.set_time_before_call(guild_id, value)
         self.recall_event.restart()
         await ctx.send("Temps d'envoit avant la date de l'évenement mis à jour.")
+
+    # fonction qui redémarre recall event pour la mettre à jour
+    def restart_recall_event(self):
+        self.recall_event.change_interval(seconds=self.interval)
+        self.has_changed_interval = False
+        self.already_running = False
+
+        if self.recall_event.is_running:
+            self.recall_event.restart()
+        else:
+            self.recall_event.start()
 
     # boucle qui permet d'afficher les évenements à la bonne date
     @tasks.loop(seconds=10)
